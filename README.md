@@ -13,7 +13,7 @@ Back end (terminal 1):
 ```
 cd backend
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt          # web app only; satellite downloads need requirements-data.txt
 uvicorn api:app --reload --port 8000
 ```
 Front end (terminal 2):
@@ -39,3 +39,26 @@ Deploy that one service (for example on Render) and the whole app is online.
 harvest months, irrigation yes/no, the priority, and the answer to "is the soil really bare after harvest?".
 It returns the numeric result (agreed format), the words for both slides, and a month-by-month timeline
 for each rotation.
+
+## Satellite data for demo fields (NASA HLS and NASADEM/SRTM)
+The app adds two NASA satellite layers for fields you prepare in advance:
+- **Green cover** from HLS (Landsat + Sentinel-2): which months the field is really bare, seen from space.
+- **Slope** from NASADEM / SRTM elevation: how easily bare soil washes away.
+
+Prepare a field once (needs a free NASA Earthdata account and the extra packages):
+```
+cd backend
+pip install -r requirements-data.txt
+python precompute.py --name juelich_field1 --geojson juelich_field1.geojson --start 2023-01-01 --end 2025-12-31
+```
+This writes `backend/demo_fields/juelich_field1.json` (a few kB). Whenever someone draws a field that overlaps it
+by 70% or more, slide 1 shows "Seen from space" dots under each month, marks months where the satellite and
+the crop months disagree, says which months clouds hid, and adds a slope sentence. The rotation is lined up
+with the satellite years automatically. Fields elsewhere use the crop months the farmer enters.
+
+Tests (no internet needed): `python tests/test_api.py`
+
+## Good to know
+- If NASA POWER cannot be reached, the API uses the saved Aachen weather in `backend/demo_weather_aachen.csv`
+  and says so on slide 1. Replace it with your demo field's file before judging.
+- Place search uses the free Nominatim service (about one request per second); keep the credits visible.

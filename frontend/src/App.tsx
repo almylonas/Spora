@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import MapScreen from "./MapScreen";
+import Landing from "./Landing";
 import FieldPanel from "./FieldPanel";
 import ResultsWindow from "./ResultsWindow";
 import { analyse, areaHa, fetchCrops } from "./api";
 import type { Analysis, CropOption, CropRow, Priority, SoilAnswer } from "./types";
 
 export default function App() {
+  // The start page shows first; "#map" in the address opens the map directly (handy for the demo).
+  const [started, setStarted] = useState(() => window.location.hash === "#map");
+  useEffect(() => {
+    const onHash = () => setStarted(window.location.hash === "#map");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const [field, setField] = useState<GeoJSON.Polygon | null>(null);
   const [crops, setCrops] = useState<CropOption[]>([]);
   const [rows, setRows] = useState<CropRow[]>([{ id: 1, crop: "", sow_month: 4, harvest_month: 10 }]);
@@ -45,9 +53,11 @@ export default function App() {
     }
   };
 
+  if (!started) return <Landing onStart={() => { window.location.hash = "map"; }} />;
+
   return (
     <div className="app">
-      <MapScreen field={field} onField={onField} />
+      <MapScreen field={field} onField={onField} onHome={() => { window.location.hash = ""; }} />
 
       {field && (
         <FieldPanel

@@ -22,6 +22,8 @@ export interface TimelineItem {
   crop: string | null;
   cover_crop: boolean;
   protected: boolean;
+  seen_from_space?: "covered" | "bare" | "no_image";
+  crop_months_say_bare?: boolean;
 }
 
 export interface RotationResult {
@@ -55,9 +57,11 @@ export interface Analysis {
     priority: Priority;
   };
   words: {
+    shared_warnings: string[];
     weather: { topic: string; trend: "up" | "down" | "same"; text: string }[];
     weather_period: string;
-    soil: { open_months: number[]; text: string; covered: string; rain: string };
+    soil: { open_months: number[]; text: string; covered: string; rain: string; slope?: string | null };
+    satellite?: { agreement: string; blind: string | null } | null;
     water: string;
     sources: string[];
     rotations: RotationWords[];

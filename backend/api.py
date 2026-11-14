@@ -19,6 +19,7 @@ from shapely.geometry import shape
 
 import fieldshift_core as fs
 import fieldshift_rotations as fr
+import satellite as sat
 import verbal
 
 HERE = Path(__file__).parent
@@ -29,6 +30,11 @@ FALLBACK_WEATHER = Path(os.environ.get("FIELDSHIFT_FALLBACK_WEATHER", HERE / "de
 app = FastAPI(title="FieldShift API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 TABLE = fr.load_crop_table(HERE / "crops.csv")
+
+
+def demo_fields():
+    """Pre-computed satellite layers (backend/demo_fields/*.json); re-read so new files appear without a restart."""
+    return sat.load_demo_fields()
 
 
 # --------------------------------------------------------------------------
@@ -100,6 +106,23 @@ def apply_soil_answer(rot, u: np.ndarray, answer: str) -> np.ndarray:
     return u
 
 
+def align_to_satellite(rot, monthly):
+    """Line the rotation up with the satellite years: try each starting year and keep the one where
+    the crop months and the satellite agree most. Returns (rotation, agreement share)."""
+    T = rot.length_months
+    best, best_score = rot, -1.0
+    for k in range(T // 12):
+        crops = [fr.make_crop(TABLE, c.name, c.start + 12 * k, c.end + 12 * k) for c in rot.crops]
+        r = fs.Rotation(rot.id, rot.name, T, rot.start_year, crops)
+        seen = sat.seen_from_space(r, monthly)
+        u_f = fs.u_from_farmer(r)
+        both = [(s_, u) for s_, u in zip(seen, u_f) if s_ != "no_image"]
+        score = sum((s_ == "bare") == bool(u) for s_, u in both) / len(both) if both else 0.0
+        if score > best_score:
+            best, best_score = r, score
+    return best, best_score
+
+
 def timeline(entry: dict) -> list[dict]:
     """One item per month of the cycle: which crop is in the ground and whether the soil is protected."""
     if not entry.get("crops"):
@@ -165,14 +188,36 @@ def analyse(req: AnalyseIn):
     start_year = dt.date.today().year - T // 12
     current = fr.rotation_from_table(TABLE, cycle, T, start_year)
     weather, note = load_weather(poly.centroid.y, poly.centroid.x)
-    u = apply_soil_answer(current, fs.u_from_farmer(current), req.soil_answer)
 
-    result = fr.build_result(poly, weather, current, u, "farmer", req.irrigated, req.priority, TABLE)
+    # Satellite layers, when the drawn field is one of the pre-computed demo fields
+    demo = sat.match_demo_field(poly, demo_fields())
+    monthly = sat.monthly_from_demo(demo) if demo else None
+    slope = demo.get("slope") if demo else None
+    seen, agreement = None, None
+    if monthly is not None:
+        current, agreement = align_to_satellite(current, monthly)
+        u, _ = fs.u_from_satellite(current, monthly)
+        seen = sat.seen_from_space(current, monthly)
+        source = "satellite"
+    else:
+        u, source = fs.u_from_farmer(current), "farmer"
+    u = apply_soil_answer(current, u, req.soil_answer)
+
+    result = fr.build_result(poly, weather, current, u, source, req.irrigated, req.priority, TABLE, monthly)
+    if demo:
+        result["field"]["demo_field"] = demo["name"]
+        result["field"]["slope"] = slope
     info = {r["id"]: r.get("generation", {}) for r in result["rotations"]}
     sb = next(r for r in result["rotations"] if r["id"] == "soil_building")
     words = verbal.build(result, info, req.irrigated, next_crop_after_cover(sb))
+    verbal.add_satellite_and_slope(words, seen, current, agreement, slope)
     for r in result["rotations"]:
         r["timeline"] = timeline(r)
+        if seen and r["timeline"] and r["id"] == "current":
+            farmer_u = fs.u_from_farmer(current)
+            for item, s_, fu in zip(r["timeline"], seen, farmer_u):
+                item["seen_from_space"] = s_
+                item["crop_months_say_bare"] = bool(fu)
     return {"result": result, "words": words, "weather_note": note,
             "climate_zone": fr.climate_zone(fs.monthly_climatology(weather, poly.centroid.y), weather)}
 

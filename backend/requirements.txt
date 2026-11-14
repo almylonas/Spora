@@ -1,3 +1,4 @@
+# Web app (enough to run the API and the front end)
 fastapi
 uvicorn
 numpy
@@ -5,5 +6,3 @@ pandas
 requests
 shapely
 pyproj
-rasterio
-earthaccess

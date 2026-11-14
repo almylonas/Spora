@@ -263,7 +263,13 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
     rtexts = [rotation_text(r, cur, info_by_id.get(r["id"], {}), irrigated, cover_next) for r in rotations]
     open_months = result["unprotected_months"]
     source_green = result["field"]["green_cover_source"]
+    # Warnings that appear on every available rotation are shown once, above the cards
+    avail = [r for r in rtexts if r.get("available")]
+    shared = [w for w in (avail[0]["warnings"] if avail else []) if all(w in r["warnings"] for r in avail)] if len(avail) > 1 else []
+    for r in avail:
+        r["warnings"] = [w for w in r["warnings"] if w not in shared]
     return {
+        "shared_warnings": shared,
         "weather": weather_lines(result["weather"]),
         "weather_period": f"{result['weather']['period_then']} compared with {result['weather']['period_now']}",
         "soil": {
@@ -282,3 +288,49 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
         "rotations": rtexts,
         "summary": summary(rtexts, result["ranking"], result["priority"], names),
     }
+
+
+# --------------------------------------------------------------------------
+# Satellite and slope (demo fields only)
+# --------------------------------------------------------------------------
+def add_satellite_and_slope(words: dict, seen: list[str] | None, rot, agreement: float | None,
+                            slope: dict | None) -> None:
+    import satellite as sat
+
+    words["satellite"] = None
+    if seen:
+        blind = sorted({rot.calendar_month(m) for m, s in enumerate(seen) if s == "no_image"})
+        if agreement is None:
+            agree = ""
+        elif agreement >= 0.85:
+            agree = "Satellite images of your field match the crop months you entered."
+        elif agreement >= 0.65:
+            agree = "Satellite images mostly match the crop months you entered; the months that differ are marked."
+        else:
+            agree = ("Satellite images often differ from the crop months you entered. Check the months marked, "
+                     "or whether the crops are in the right order.")
+        words["satellite"] = {
+            "agreement": agree,
+            "blind": (f"Clouds hid your field in {month_ranges(blind)}; those months use the crop months you entered."
+                      if blind else None),
+        }
+        words["sources"][1] = "Bare months: satellite images of your field (NASA HLS, Landsat and Sentinel-2), checked with your crop months."
+    words["soil"]["slope"] = sat.slope_words(slope)
+    if slope:
+        words["sources"].append("Slope: NASA elevation data (NASADEM / SRTM, 30 m).")
+        flat = slope["mean_pct"] < 2 and slope["share_steep"] < 0.05
+        steep = slope["share_steep"] >= 0.3
+
+        def adjust(w: str) -> str:
+            if not w.startswith("Heavy rain falls on bare soil"):
+                return w
+            if flat:
+                return w.replace("which can wash soil away", "but your field is flat, so little soil is washed away")
+            if steep:
+                return w.replace("which can wash soil away", "and much of your field is on a slope, so soil washes away easily")
+            return w
+
+        words["shared_warnings"] = [adjust(w) for w in words["shared_warnings"]]
+        for r in words["rotations"]:
+            if r.get("warnings"):
+                r["warnings"] = [adjust(w) for w in r["warnings"]]

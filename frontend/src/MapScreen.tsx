@@ -14,9 +14,10 @@ type Mode = "idle" | "drawing" | "editing";
 interface Props {
   field: GeoJSON.Polygon | null;
   onField: (p: GeoJSON.Polygon | null) => void;
+  onHome: () => void;
 }
 
-export default function MapScreen({ field, onField }: Props) {
+export default function MapScreen({ field, onField, onHome }: Props) {
   const [satellite, setSatellite] = useState(true);
   return (
     <MapContainer center={[50.92, 6.36]} zoom={14} zoomControl={false} className="map" attributionControl>
@@ -35,12 +36,12 @@ export default function MapScreen({ field, onField }: Props) {
           maxZoom={19}
         />
       )}
-      <MapTools field={field} onField={onField} satellite={satellite} setSatellite={setSatellite} />
+      <MapTools field={field} onField={onField} onHome={onHome} satellite={satellite} setSatellite={setSatellite} />
     </MapContainer>
   );
 }
 
-function MapTools({ field, onField, satellite, setSatellite }: Props & {
+function MapTools({ field, onField, onHome, satellite, setSatellite }: Props & {
   satellite: boolean; setSatellite: (v: boolean) => void;
 }) {
   const map = useMap();
@@ -131,10 +132,10 @@ function MapTools({ field, onField, satellite, setSatellite }: Props & {
   return (
     <>
       <div className="topbar" onDoubleClick={(e) => e.stopPropagation()}>
-        <div className="brand" aria-label="FieldShift">
-          <span className="brand-mark" aria-hidden="true" />
-          FieldShift
-        </div>
+        <button type="button" className="brand" onClick={onHome} aria-label="Spora, back to the start page">
+          <img className="brand-mark" src="/landing/spora-mark.png" alt="" aria-hidden="true" />
+          Spora
+        </button>
         <SearchBox onPick={(p) => {
           if (p.bbox) map.fitBounds([[p.bbox[0], p.bbox[2]], [p.bbox[1], p.bbox[3]]], { maxZoom: 16 });
           else map.flyTo([p.lat, p.lon], 15);

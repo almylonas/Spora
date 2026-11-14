@@ -35,6 +35,20 @@ export default function MonthStrip({ items, compact = false }: { items: Timeline
                 />
               ))}
             </div>
+            {!compact && row.some((it) => it.seen_from_space) && (
+              <div className="strip-seen" role="list" aria-label="Seen from space">
+                {row.map((it, k) => {
+                  const s = it.seen_from_space ?? "no_image";
+                  const differs = s !== "no_image" && (s === "bare") !== it.crop_months_say_bare;
+                  return (
+                    <span key={k} role="listitem"
+                      className={`seen seen-${s}${differs ? " is-differs" : ""}`}
+                      title={`${MONTHS[it.month - 1]}, seen from space: ${s === "no_image" ? "no clear image" : s}${differs ? " (differs from your crop months)" : ""}`}
+                      aria-label={`${MONTHS[it.month - 1]}, seen from space: ${s === "no_image" ? "no clear image" : s}`} />
+                  );
+                })}
+              </div>
+            )}
             {(!compact || y === years[years.length - 1]) && (
               <div className="strip-months" aria-hidden="true">
                 {row.map((it, k) => <span key={k}>{MONTH_INITIALS[it.month - 1]}</span>)}
@@ -48,6 +62,9 @@ export default function MonthStrip({ items, compact = false }: { items: Timeline
           <li><span className="cell cell-crop" /> Crop growing</li>
           <li><span className="cell cell-cover" /> Cover crop</li>
           <li><span className="cell cell-bare" /> Bare soil</li>
+          {items.some((i) => i.seen_from_space) && (
+            <li><span className="seen seen-covered" /><span className="seen seen-bare" /> Seen from space</li>
+          )}
         </ul>
       )}
     </div>

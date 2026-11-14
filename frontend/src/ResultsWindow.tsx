@@ -59,16 +59,16 @@ export default function ResultsWindow(p: Props) {
             {p.error ? <ErrorState message={p.error} /> : !p.data ? <Loading /> : (
               <FieldSlide data={p.data} soilAnswer={p.soilAnswer} onSoilAnswer={p.onSoilAnswer} busy={p.busy} />
             )}
-            <p className="disclaimer phone-only">FieldShift supports your judgement. It does not replace local advice.</p>
+            <p className="disclaimer phone-only">Spora supports your judgement. It does not replace local advice.</p>
           </section>
           <section className="slide" role="tabpanel" aria-label="Your options" aria-hidden={slide !== 1}>
             {p.data && <OptionsSlide data={p.data} priority={p.priority} onPriority={p.onPriority} busy={p.busy} />}
-            <p className="disclaimer phone-only">FieldShift supports your judgement. It does not replace local advice.</p>
+            <p className="disclaimer phone-only">Spora supports your judgement. It does not replace local advice.</p>
           </section>
         </div>
 
         <footer className="window-foot">
-          <p className="disclaimer desktop-only">FieldShift supports your judgement. It does not replace local advice.</p>
+          <p className="disclaimer desktop-only">Spora supports your judgement. It does not replace local advice.</p>
           {slide === 0 ? (
             <button type="button" className="primary" disabled={!p.data} onClick={() => setSlide(1)}>
               Compare rotations <IconArrow dir="right" />
@@ -138,7 +138,15 @@ function FieldSlide({ data, soilAnswer, onSoilAnswer, busy }: {
         <ul className="plain-list">
           <li>{w.soil.covered}</li>
           <li>{w.soil.rain} Bare soil in heavy rain is where soil and nutrients are lost.</li>
+          {w.soil.slope && <li>{w.soil.slope}</li>}
         </ul>
+        {w.satellite && (
+          <div className="space-note">
+            <h4>Seen from space</h4>
+            <p>{w.satellite.agreement}</p>
+            {w.satellite.blind && <p className="muted small">{w.satellite.blind}</p>}
+          </div>
+        )}
 
         <fieldset className="confirm" disabled={busy}>
           <legend>Is the soil really bare after harvest?</legend>
@@ -184,6 +192,13 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
           ))}
         </div>
       </div>
+      {data.words.shared_warnings.length > 0 && (
+        <section className="shared-warnings">
+          <h3><IconWarn /> Warnings for every option</h3>
+          <p className="muted small">These come from the weather and the crops all three rotations share.</p>
+          <ul>{data.words.shared_warnings.map((t) => <li key={t}>{t}</li>)}</ul>
+        </section>
+      )}
       <div className={`cards${busy ? " is-busy" : ""}`}>
         {order.map((r) => (
           <OptionCard
