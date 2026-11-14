@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-numpy
-pandas
-requests
-shapely
-pyproj
-rasterio
-earthaccess
