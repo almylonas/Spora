@@ -57,8 +57,3 @@ the crop months disagree, says which months clouds hid, and adds a slope sentenc
 with the satellite years automatically. Fields elsewhere use the crop months the farmer enters.
 
 Tests (no internet needed): `python tests/test_api.py`
-
-## Good to know
-- If NASA POWER cannot be reached, the API uses the saved Aachen weather in `backend/demo_weather_aachen.csv`
-  and says so on slide 1. Replace it with your demo field's file before judging.
-- Place search uses the free Nominatim service (about one request per second); keep the credits visible.
