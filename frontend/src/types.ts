@@ -1,5 +1,17 @@
 export type Priority = "save_water" | "build_soil" | "income_forage";
 export type SoilAnswer = "bare" | "stubble" | "other";
+export type Issue = "fungal" | "viral" | "pests" | "none" | "unknown";
+export type Nutrient = "normal" | "high_n" | "low_n" | "low_p" | "low_k" | "unknown";
+
+/** Field health answers: the first two are asked of everyone, the soil ones are optional. */
+export interface Health {
+  issues: Issue[];
+  nutrients: Nutrient[];
+  soil_texture: "sandy" | "loamy" | "clay" | "unknown";
+  soil_look: "red" | "light" | "dark" | "unknown";
+  ph: number | null;
+  soil_source: "analysis" | "experience";
+}
 
 export interface CropOption {
   crop: string;
@@ -37,6 +49,8 @@ export interface RotationResult {
   rain_on_open_soil_pct?: number;
   extra_water_mm_per_year?: number;
   earning_months_per_year?: number;
+  cycle_months?: number;
+  health?: { cereal_repeats: number; green_bridge: string | null; break_crops: number };
   timeline: TimelineItem[];
 }
 
@@ -67,6 +81,7 @@ export interface Analysis {
     water: string;
     sources: string[];
     rotations: RotationWords[];
+    health?: { lines: string[]; ask: string[] };
     summary: string;
   };
   weather_note: string | null;
@@ -80,6 +95,7 @@ export interface AnalyseRequest {
   priority: Priority;
   soil_answer: SoilAnswer;
   lang: "en" | "de" | "el";
+  health: Health;
 }
 
 export const PRIORITIES: { id: Priority; label: "p_save_water" | "p_build_soil" | "p_income_forage";

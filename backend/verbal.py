@@ -238,11 +238,108 @@ def summary(rotations_text: list[dict], ranking: list[str], priority: str, names
     return t("sum_best", prio=prio, name=t("n_" + best), decision=d)
 
 
+# --------------------------------------------------------------------------
+# Field health (pests, diseases, nutrients, soil): rules in health.py
+# --------------------------------------------------------------------------
+def _times(n: int) -> str:
+    return t("times_1") if n == 1 else t("times_2") if n == 2 else t("times_n", n=n)
+
+
+def add_health(result: dict, rtexts: list[dict]) -> list[str]:
+    """Adds pest, disease and soil lines to each option; returns the lines for the field page."""
+    import health as hl
+    h = result.get("field_health") or hl.defaults(None)
+    probs = hl.problems(h)
+    nutrients = set(h["nutrients"])
+    texture = h["soil_texture"]
+    entries = {e["id"]: e for e in result["rotations"]}
+    cur = entries["current"]
+    cur_rep = cur.get("health", {}).get("cereal_repeats", 0)
+
+    for r in rtexts:
+        if not r.get("available"):
+            continue
+        e = entries[r["id"]]
+        crops = e["crops"]
+        hs = e.get("health", {})
+        cereals = hl.has_cereal(crops)
+        names = {c["crop"] for c in crops}
+        legs = hl.legumes(crops)
+        warn, better, ask = [], [], []
+        if r["id"] in result.get("ranking_demoted", []):
+            warn.append(t("hw_demoted"))
+        if hs.get("cereal_repeats"):
+            warn.append(t("hw_repeat", times=_times(hs["cereal_repeats"])) + (t("hw_repeat_issue") if probs else ""))
+        if hs.get("green_bridge"):
+            warn.append(t("hw_bridge", cover=cap(crop(hs["green_bridge"]))))
+        if texture == "clay" and cereals:
+            warn.append(t("hw_clay"))
+        if "high_n" in nutrients and cereals:
+            warn.append(t("hw_high_n"))
+        if r["id"] != "current":
+            if hs.get("cereal_repeats", 0) < cur_rep:
+                better.append(t("hb_fewer_repeats"))
+            if r["id"] == "soil_building" and "poaceae" in (e.get("generation", {}).get("avoided_families") or []):
+                better.append(t("hb_no_grass"))
+            new_legume = any(c.get("legume") for c in crops if c["crop"] not in {x["crop"] for x in cur["crops"]})
+            if "low_n" in nutrients and new_legume:
+                better.append(t("hb_legume_n"))
+            if nutrients & {"low_p", "low_k"} and new_legume:
+                better.append(t("hb_legume_pk"))
+            if texture == "sandy" and r["id"] == "soil_building":
+                better.append(t("hb_sandy_cover"))
+            cover = next((c for c in crops if c.get("cover_crop")), None)
+            if r["id"] == "soil_building" and cover and "low_n" in nutrients and not cover.get("legume"):
+                ask.append(t("hq_legume_instead"))
+            if "high_n" in nutrients and new_legume:
+                ask.append(t("hq_cut_n"))
+        if "fungal" in probs and legs:
+            ask.append(t("hq_legume_fungal"))
+        if "fungal" in probs and cereals:
+            ask.append(t("hq_seed"))
+        if "viral" in probs and any(c["family"] == hl.CEREAL and not c["cover_crop"] and c["sow_month"] in (9, 10, 11)
+                                    for c in crops):
+            ask.append(t("hq_late_sowing"))
+        if texture == "clay" and names & {"winter wheat", "durum wheat", "winter barley", "spring barley"}:
+            ask.append(t("hq_mosaic"))
+        if nutrients & {"low_p", "low_k"}:
+            ask.append(t("hq_test_pk"))
+        r["warnings"] = warn + r.get("warnings", [])
+        r["better"] = r.get("better", []) + [b for b in better if b not in r.get("better", [])]
+        r["ask_advisor"] = r.get("ask_advisor", []) + ask
+
+    # The field page
+    lines = []
+    if probs:
+        lines.append(t("fh_reported", list=", ".join(t("fh_" + k) for k in ("fungal", "viral", "pests") if k in probs)))
+        lines.append(t("fh_effect"))
+    elif "none" in h["issues"]:
+        lines.append(t("fh_none"))
+    else:
+        lines.append(t("fh_unknown"))
+    if cur_rep:
+        lines.append(t("hw_repeat", times=_times(cur_rep)) + (t("hw_repeat_issue") if probs else ""))
+    if texture == "sandy":
+        lines.append(t("fh_sandy"))
+    if texture == "clay" and hl.has_cereal(cur["crops"]):
+        lines.append(t("hw_clay"))
+    sure = h["soil_source"] == "analysis"
+    ph = t("fh_ph", ph=f"{h['ph']:.1f}".replace(".", "," if i18n.lang() == "de" else ".")) if h["ph"] is not None else ""
+    if hl.acidic(h):
+        lines.append(t("fh_acid_sure" if sure else "fh_acid", ph=ph))
+    if hl.chalky(h):
+        lines.append(t("fh_chalky_sure" if sure else "fh_chalky", ph=ph))
+    if texture != "unknown" or h["soil_look"] != "unknown" or h["ph"] is not None:
+        lines.append(t("fh_from_analysis" if sure else "fh_from_experience"))
+    return lines
+
+
 def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | None) -> dict:
     rotations = result["rotations"]
     cur = rotations[0]
     names = {r["id"]: r["name"] for r in rotations}
     rtexts = [rotation_text(r, cur, info_by_id.get(r["id"], {}), irrigated, cover_next) for r in rotations]
+    health_box = add_health(result, rtexts)
     open_months = result["unprotected_months"]
     source_green = result["field"]["green_cover_source"]
     # Warnings that appear on every available rotation are shown once, above the cards
@@ -250,6 +347,11 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
     shared = [w for w in (avail[0]["warnings"] if avail else []) if all(w in r["warnings"] for r in avail)] if len(avail) > 1 else []
     for r in avail:
         r["warnings"] = [w for w in r["warnings"] if w not in shared]
+    # Advisor questions about the field itself (asked on every card) move to the field page
+    shared_ask = ([q for q in avail[0]["ask_advisor"] if all(q in r["ask_advisor"] for r in avail)]
+                  if len(avail) > 1 else [])
+    for r in avail:
+        r["ask_advisor"] = [q for q in r["ask_advisor"] if q not in shared_ask]
     return {
         "shared_warnings": shared,
         "weather": weather_lines(result["weather"]),
@@ -265,8 +367,10 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
         "sources": [
             t("src_weather"),
             t("src_bare_sat") if source_green == "satellite" else t("src_bare_farmer"),
+            t("src_health"),
         ],
         "rotations": rtexts,
+        "health": {"lines": health_box, "ask": shared_ask},
         "summary": summary(rtexts, result["ranking"], result["priority"], names),
     }
 

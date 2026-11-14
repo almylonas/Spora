@@ -44,6 +44,30 @@ def run():
                and (t["seen_from_space"] == "bare") != t["crop_months_say_bare"]]
     assert len(differs) == 1, differs   # the weedy September in the fixture
 
+    # Field health: unit rules, then a full request in German with pests and diseases reported
+    import health as hl
+    wheat = {"crop": "winter wheat", "family": "poaceae", "cover_crop": False, "cycle_start": 0, "cycle_end": 9}
+    barley = {"crop": "winter barley", "family": "poaceae", "cover_crop": False, "cycle_start": 20, "cycle_end": 30}
+    beet = {"crop": "sugar beet", "family": "amaranthaceae", "cover_crop": False, "cycle_start": 15, "cycle_end": 18}
+    rye = {"crop": "winter rye", "family": "poaceae", "cover_crop": True, "cycle_start": 10, "cycle_end": 14}
+    assert hl.cereal_repeats([wheat, barley]) == 2          # wheat -> barley -> (back to) wheat
+    assert hl.cereal_repeats([wheat, beet, barley]) == 1    # beet -> barley -> wheat
+    assert hl.green_bridge([wheat, rye, barley], 36) == "winter rye"
+    ranking, demoted = hl.adjust_ranking(
+        ["soil_building", "current"],
+        [{"id": "current", "health": {"cereal_repeats": 1, "green_bridge": None}},
+         {"id": "soil_building", "health": {"cereal_repeats": 1, "green_bridge": "winter rye"}}],
+        hl.defaults({"issues": ["fungal"]}))
+    assert ranking == ["current", "soil_building"] and demoted == ["soil_building"]
+    d = c.post("/api/analyse", json={"field": FIELD, "crops": CROPS, "priority": "build_soil", "lang": "de",
+                                     "health": {"issues": ["fungal", "pests"], "nutrients": ["low_n"],
+                                                "soil_texture": "clay", "ph": 5.2, "soil_source": "analysis"}}).json()
+    lines = d["words"]["health"]["lines"]
+    assert lines[0].startswith("Sie haben angegeben") and any("pH 5,2" in x for x in lines), lines
+    sb = next(r for r in d["result"]["rotations"] if r["id"] == "soil_building")
+    if sb.get("crops"):
+        assert not any(c["cover_crop"] and c["family"] == "poaceae" for c in sb["crops"]), "no cereal cover with diseases"
+
     # Input checks
     tiny = {"type": "Polygon", "coordinates": [[[6.355, 50.92], [6.3551, 50.92], [6.3551, 50.9201], [6.355, 50.92]]]}
     assert c.post("/api/analyse", json={"field": tiny, "crops": CROPS}).status_code == 422

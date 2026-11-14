@@ -66,6 +66,13 @@ A form opens beside the field (from the bottom on a phone):
 - the crops in the order they are grown, each with its sowing and harvest month (sensible months are filled in
   when a crop is chosen), up to six crops;
 - *Can you irrigate this field?* Yes / No;
+- **Field health** (asked of everyone, with a "Not sure" answer): *Have there been pest or disease problems on
+  this field?* (fungal, viral, insect pests, none) and *Fertiliser last season, or any shortage you noticed?*
+  (usual, a lot of nitrogen, N, P or K shortage);
+- **Your soil** (optional, folded away): texture (sandy, loamy, clay), colour (red = iron-rich; light or whitish
+  = possibly chalky, high pH; very dark = organic, possibly acidic), pH if known, and whether this comes from a
+  soil analysis or from what the farmer sees. Analysis results are stated firmly; observations are hedged and a
+  soil test is suggested;
 - *What matters most to you?* Save water · Build healthier soil · Earn more or feed animals.
 
 Then **Analyse my field**.
@@ -75,6 +82,8 @@ Then **Analyse my field**.
 - **Water:** whether rain covers what the crops need.
 - **When your soil is bare:** the month strip for every year of the rotation, plus how much of the year's rain
   falls on bare soil and, on prepared fields, the slope and what the satellite saw.
+- **Field health:** what the farmer reported, what it changes in the advice, how often a cereal follows a cereal,
+  soil notes, and the questions about this field to take to an advisor.
 - One question back to the farmer: *Is the soil really bare after harvest?* (bare soil, stubble left, something
   else). The answer updates the results at once.
 - **Where this comes from:** the data behind each statement.
@@ -85,7 +94,8 @@ Then **Analyse my field**.
   Switching the priority re-ranks the options instantly.
 - Warnings that apply to every option are folded into one line, so the cards show only what differs.
 - Three cards. Each starts with what to do, then three lines **at a glance** (soil covered, rain on bare soil,
-  extra water), each with a small bar and a green or red arrow against today. Below: the month strip and three
+  extra water, and cereal after cereal when the rotation has cereals), each with a small bar and a check mark
+  (better than today), a warning mark (worse) or a dash (about the same). Below: the month strip and three
   lines that open on tap: *What gets better*, *Watch out for*, *Ask your advisor*.
 
 ### 8. Three languages
@@ -122,6 +132,7 @@ and the field's mean slope is 3 %.
 | [NASA HLS](https://hls.gsfc.nasa.gov/) (Harmonized Landsat Sentinel-2, 30 m) | Monthly greenness (NDVI) of the field, to see from space when the soil is really bare |
 | [NASADEM](https://lpdaac.usgs.gov/products/nasadem_hgtv001/) (30 m elevation) | Slope of the field, to judge how easily bare soil washes away |
 | FAO-56 (Allen et al., 1998) | Reference evapotranspiration method and crop water coefficients |
+| Agronomy text on winter cereals, crop rotation, pests and diseases (from the team's agronomist) | Field-health rules: pests, diseases, nutrients and soil |
 | Landwirtschaftskammer NRW and FAO crop calendars | Sowing and harvest months, cover crops and crop limits in the crop table (`backend/crops.csv`) |
 | NRW field blocks (ogc-api.nrw.de) | The outline of the demo field |
 | OpenStreetMap / Nominatim, Esri World Imagery | Map tiles and place search |
@@ -158,6 +169,23 @@ warmth and needs at least 20 % less water.
 
 **Ranking.** No hidden score: the farmer's priority picks the number. Save water → lowest $N_3$. Build soil →
 lowest $N_2$, then highest $N_1$. Earn more or feed animals → highest $N_4$.
+
+**Pests and diseases.** The farmer's field-health answers change what Spora suggests, following an agronomy text
+on winter cereals, crop rotation, pests and diseases supplied by the team's agronomist:
+- A cereal after a cereal is not a true rotation: same nutrient needs and roots, nearly the same pests and
+  diseases, and shed grain comes up in the next crop. Spora counts how often it happens in each option.
+- With past pests or diseases, no cereal cover crop (such as winter rye) is placed before a cereal, the
+  water-saving swap never puts a crop next to its own family, and an option with more cereals in a row than
+  today is never ranked first.
+- Legumes add nitrogen and make phosphorus, potassium and sulphur easier to take up, but are themselves prone to
+  fungal diseases; oilseeds are good breaks.
+- Heavy clay soil: more root rots, soil-borne mosaic viruses and cereal ground beetle. Heavy nitrogen: more
+  powdery mildew and cereal leaf beetle. Viral problems: sow winter cereals later in autumn, after the aphid
+  flight. Fungal problems: certified, treated seed and resistant varieties against rusts, bunts and smuts.
+- General agronomy, not from the text: sandy soil holds little water and loses nitrogen; acidic soil hurts sugar
+  beet, barley, rapeseed and clover; chalky soil locks up phosphorus.
+
+The rules live in `backend/health.py`.
 
 **Warnings** are counted over the last 20 years and shown when they happen in at least 4 of them: heat during
 a crop's sensitive months, frost after sowing, two-week dry spells, and heavy rain (20 mm or more in a day) on
@@ -204,13 +232,14 @@ api/        Vercel entry point for the back end
 | Help guide | `frontend/src/HelpTour.tsx` |
 | Interface text (EN, DE, EL) | `frontend/src/i18n.tsx` |
 | Calculations | `backend/fieldshift_core.py`, `backend/fieldshift_rotations.py` |
+| Field health rules (pests, diseases, nutrients, soil) | `backend/health.py` |
 | Result sentences (EN, DE, EL) | `backend/verbal.py`, `backend/i18n.py` |
 | Crop table | `backend/crops.csv` |
 | Satellite and slope for demo fields | `backend/satellite.py`, `backend/precompute.py`, `backend/demo_fields/` |
 
 **API.** `GET /api/crops` lists crops with names in all three languages. `POST /api/analyse` takes the field
 outline (GeoJSON), the crops in order with sowing and harvest months, irrigation, priority, the answer about
-bare soil after harvest and `lang` (`en`, `de` or `el`). It returns the numbers, the sentences for both pages and a
+bare soil after harvest, the field-health answers (`health`) and `lang` (`en`, `de` or `el`). It returns the numbers, the sentences for both pages and a
 month-by-month timeline for each rotation.
 
 ### Run on your computer

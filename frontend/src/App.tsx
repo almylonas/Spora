@@ -6,7 +6,7 @@ import ResultsWindow from "./ResultsWindow";
 import HelpTour, { TourOffer } from "./HelpTour";
 import { analyse, areaHa, fetchCrops } from "./api";
 import { useI18n } from "./i18n";
-import type { Analysis, CropOption, CropRow, Priority, SoilAnswer } from "./types";
+import type { Analysis, CropOption, CropRow, Health, Priority, SoilAnswer } from "./types";
 
 const TOUR_SEEN = "spora-tour-seen";
 
@@ -25,6 +25,9 @@ export default function App() {
   const [irrigated, setIrrigated] = useState<boolean | null>(null);
   const [priority, setPriority] = useState<Priority | null>(null);
   const [soilAnswer, setSoilAnswer] = useState<SoilAnswer>("bare");
+  const [health, setHealth] = useState<Health>({
+    issues: [], nutrients: [], soil_texture: "unknown", soil_look: "unknown", ph: null, soil_source: "experience",
+  });
 
   const [windowOpen, setWindowOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -61,6 +64,7 @@ export default function App() {
         priority: over.priority ?? priority!,
         soil_answer: over.soilAnswer ?? soilAnswer,
         lang,
+        health,
       });
       setData(res);
     } catch (e) {
@@ -96,6 +100,8 @@ export default function App() {
           setIrrigated={setIrrigated}
           priority={priority}
           setPriority={setPriority}
+          health={health}
+          setHealth={setHealth}
           busy={busy}
           error={cropsError ? t("crops_load_error") : null}
           onRedraw={() => onField(null)}

@@ -4,7 +4,7 @@ import { LangSwitch, useI18n, type Key } from "./i18n";
 import { PRIORITIES, type Analysis, type Priority, type RotationResult, type RotationWords, type SoilAnswer } from "./types";
 import {
   IconArrow, IconAsk, IconChevron, IconClose, IconCoin, IconDown, IconDrop, IconLeaf, IconRain, IconSame, IconSprout,
-  IconUp, IconWarn,
+  IconUp, IconWarn, IconBug, IconCheck,
 } from "./icons";
 
 interface Props {
@@ -156,6 +156,18 @@ function FieldSlide({ data, soilAnswer, onSoilAnswer, busy }: {
           <li>{w.soil.rain} {t("heavy_note")}</li>
           {w.soil.slope && <li>{w.soil.slope}</li>}
         </ul>
+        {w.health && (w.health.lines.length > 0 || w.health.ask.length > 0) && (
+          <div className="health-note">
+            <h4><IconBug /> {t("health_h")}</h4>
+            <ul>{w.health.lines.map((x) => <li key={x}>{x}</li>)}</ul>
+            {w.health.ask.length > 0 && (
+              <>
+                <h5><IconAsk /> {t("health_ask_h")}</h5>
+                <ul>{w.health.ask.map((x) => <li key={x}>{x}</li>)}</ul>
+              </>
+            )}
+          </div>
+        )}
         {w.satellite && (
           <div className="space-note">
             <h4>{t("space_h")}</h4>
@@ -199,6 +211,8 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
   const current = data.result.rotations.find((r) => r.id === "current")!;
   const maxWater = Math.max(1, ...data.result.rotations.map((r) => r.extra_water_mm_per_year ?? 0));
   const shared = data.words.shared_warnings;
+  // Show "cereal after cereal" when any option has it, so the cards can be compared on pest pressure
+  const showCereal = data.result.rotations.some((r) => (r.health?.cereal_repeats ?? 0) > 0);
   return (
     <div className="options-slide">
       <div className="decision">
@@ -235,6 +249,7 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
             priority={priority}
             words={data.words.rotations.find((x) => x.id === r.id)!}
             best={ranking[0] === r.id}
+            showCereal={showCereal}
           />
         ))}
       </div>
@@ -255,8 +270,9 @@ function compare(value: number, now: number, higherIsBetter: boolean, tolerance:
   return (value > now) === higherIsBetter ? "better" : "worse";
 }
 
-function OptionCard({ rot, current, maxWater, priority, words, best }: {
+function OptionCard({ rot, current, maxWater, priority, words, best, showCereal }: {
   rot: RotationResult; current: RotationResult; maxWater: number; priority: Priority; words: RotationWords; best: boolean;
+  showCereal: boolean;
 }) {
   const { t, num } = useI18n();
   const name = t(ROT_NAME[rot.id]);
@@ -274,6 +290,9 @@ function OptionCard({ rot, current, maxWater, priority, words, best }: {
   const rain = rot.rain_on_open_soil_pct ?? 0;
   const water = rot.extra_water_mm_per_year ?? 0;
   const earn = rot.earning_months_per_year ?? 0;
+  const reps = rot.health?.cereal_repeats ?? 0;
+  const years = Math.max(1, Math.round((rot.cycle_months ?? 12) / 12));
+  const mains = (rot.crops ?? []).filter((c) => !c.cover_crop).length;
   return (
     <article className={`card${best ? " is-best" : ""}`}>
       <header className="card-head">
@@ -292,6 +311,12 @@ function OptionCard({ rot, current, maxWater, priority, words, best }: {
         <GlanceRow icon={<IconDrop />} label={t("g_water")} value={t("g_water_val", { n: num(water) })}
           bar={<Bar share={water / maxWater} tone="sky" />}
           dir={isCurrent ? null : compare(water, current.extra_water_mm_per_year ?? 0, false, 10)} />
+        {showCereal && (
+          <GlanceRow icon={<IconBug />} label={t("g_cereal")}
+            value={reps === 0 ? t("g_cereal_none") : t("g_cereal_val", { n: `${reps}×`, y: years })}
+            bar={<Bar share={Math.min(1, reps / Math.max(1, mains))} tone="beet" />}
+            dir={isCurrent ? null : compare(reps, current.health?.cereal_repeats ?? 0, false, 0.5)} />
+        )}
         {priority === "income_forage" && (
           <GlanceRow icon={<IconCoin />} label={t("g_earn")} value={t("g_earn_val", { n: num(earn, 1) })}
             bar={<Bar share={earn / 12} tone="straw" />}
@@ -329,7 +354,7 @@ function GlanceRow({ icon, label, value, bar, dir }: {
         <span className="glance-value">{value}</span>
         {dir && (
           <span className={`delta delta-${dir}`} title={word}>
-            <span aria-hidden="true">{dir === "better" ? <IconUp /> : dir === "worse" ? <IconDown /> : <IconSame />}</span>
+            <span aria-hidden="true">{dir === "better" ? <IconCheck /> : dir === "worse" ? <IconWarn /> : <IconSame />}</span>
             <span className="sr-only">{word}</span>
           </span>
         )}

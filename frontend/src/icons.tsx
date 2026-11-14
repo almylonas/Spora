@@ -62,3 +62,7 @@ export const IconCoin = () => (
   <svg {...base} width={18} height={18}><circle cx="12" cy="12" r="8" /><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.5.8-2.5 1.9 0 2.7 5 1.4 5 4.2 0 1.1-1 1.9-2.5 1.9-1.1 0-2-.4-2.5-1.2M12 6.5V8M12 16v1.5" /></svg>
 );
 export const IconChevron = () => <svg {...base} width={18} height={18}><path d="m9 6 6 6-6 6" /></svg>;
+export const IconBug = () => (
+  <svg {...base} width={18} height={18}><ellipse cx="12" cy="13.5" rx="4.5" ry="6" /><path d="M12 7.5V19.5M9.5 7.5 8 5M14.5 7.5 16 5M7.5 12H4M16.5 12H20M7.8 16.5 5 18.5M16.2 16.5 19 18.5" /></svg>
+);
+export const IconCheck = () => <svg {...base} width={18} height={18}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>;

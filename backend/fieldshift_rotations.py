@@ -177,7 +177,7 @@ def usable_window(rot: fs.Rotation, u: np.ndarray) -> tuple[int, int] | None:
 # Soil-building alternative
 # --------------------------------------------------------------------------
 def soil_building(table: pd.DataFrame, rot: fs.Rotation, u: np.ndarray, df: pd.DataFrame,
-                  clim: pd.DataFrame) -> tuple[fs.Rotation | None, dict]:
+                  clim: pd.DataFrame, avoid_families: set[str] | None = None) -> tuple[fs.Rotation | None, dict]:
     win = usable_window(rot, u)
     info: dict = {"window": None, "candidates": []}
     if win is None or win[1] - win[0] + 1 < COVER_MIN_MONTHS:
@@ -191,6 +191,9 @@ def soil_building(table: pd.DataFrame, rot: fs.Rotation, u: np.ndarray, df: pd.D
     # crops (clubroot) and clover/vetch (Sclerotinia hosts).
     has_brassica = any(c.family == "brassicaceae" and not c.cover for c in rot.crops)
     excluded = {"brassicaceae", "fabaceae"} if has_brassica else set()
+    # Field health: with past pests or diseases, no cereal cover crop between cereals
+    excluded |= set(avoid_families or ())
+    info["avoided_families"] = sorted(avoid_families or ())
     for name, row in candidates(table, "cover", zone).iterrows():
         if row.family in excluded:
             continue
@@ -224,7 +227,8 @@ def soil_building(table: pd.DataFrame, rot: fs.Rotation, u: np.ndarray, df: pd.D
 # Water-saving alternative
 # --------------------------------------------------------------------------
 def water_saving(table: pd.DataFrame, rot: fs.Rotation, df: pd.DataFrame,
-                 clim: pd.DataFrame, current_n3: float) -> tuple[fs.Rotation | None, dict]:
+                 clim: pd.DataFrame, current_n3: float, strict_families: bool = False) -> tuple[fs.Rotation | None, dict]:
+    """strict_families: with past pests or diseases, never put a crop next to one of its own family."""
     info: dict = {}
     if current_n3 < WATER_SAVING_MIN_MM:
         info["reason"] = f"your rotation already fits local rainfall (about {current_n3:.0f} mm extra water a year)"
@@ -256,6 +260,8 @@ def water_saving(table: pd.DataFrame, rot: fs.Rotation, df: pd.DataFrame,
             crop = make_crop(table, name, start, end)
             new_gap = fs.crop_water_gap(rot, crop, clim)
             same_family = row.family in {prev_c.family, next_c.family}
+            if strict_families and same_family:
+                break
             options.append((same_family, new_gap, crop))
             break
     options = [o for o in options if o[1] <= (1 - WATER_SAVING_MIN_GAIN) * old_gap]
@@ -385,7 +391,9 @@ def _entry(rot: fs.Rotation, u: np.ndarray, clim: pd.DataFrame, df: pd.DataFrame
 
 def build_result(polygon_wgs84, df: pd.DataFrame, current: fs.Rotation, u: np.ndarray,
                  green_cover_source: str, irrigated: bool, priority: str,
-                 table: pd.DataFrame, monthly: pd.DataFrame | None = None) -> dict:
+                 table: pd.DataFrame, monthly: pd.DataFrame | None = None, field_health: dict | None = None) -> dict:
+    import health as hl
+    h = hl.defaults(field_health)
     if priority not in PRIORITIES:
         raise ValueError(f"priority must be one of {PRIORITIES}")
     lat = polygon_wgs84.centroid.y
@@ -394,8 +402,10 @@ def build_result(polygon_wgs84, df: pd.DataFrame, current: fs.Rotation, u: np.nd
     T = current.length_months
 
     cur = _entry(current, u, clim, df, irrigated)
-    sb_rot, sb_info = soil_building(table, current, u, df, clim)
-    ws_rot, ws_info = water_saving(table, current, df, clim, cur["extra_water_mm_per_year"])
+    avoid = hl.avoid_cover_families(h, hl.has_cereal(cur["crops"]))
+    sb_rot, sb_info = soil_building(table, current, u, df, clim, avoid)
+    ws_rot, ws_info = water_saving(table, current, df, clim, cur["extra_water_mm_per_year"],
+                                   strict_families=bool(hl.problems(h)))
 
     rotations = [cur]
     for rid, name, alt, info in (("soil_building", "Soil-building rotation", sb_rot, sb_info),
@@ -414,7 +424,10 @@ def build_result(polygon_wgs84, df: pd.DataFrame, current: fs.Rotation, u: np.nd
         if e.get("crops"):
             info = e.pop("_info", {})
             e["card"] = card(e, cur, info, source)
-            e["generation"] = {k: v for k, v in info.items() if k in ("chosen", "replaced", "replaced_gap_mm", "chosen_gap_mm")}
+            e["generation"] = {k: v for k, v in info.items()
+                               if k in ("chosen", "replaced", "replaced_gap_mm", "chosen_gap_mm", "avoided_families")}
+            e["health"] = hl.summary(e)
+    ranking, demoted = hl.adjust_ranking(rank(rotations, priority), rotations, h)
 
     field_info = {"area_ha": round(fs.polygon_area_ha(polygon_wgs84), 1), "centre_lat": round(lat, 4),
                   "centre_lon": round(polygon_wgs84.centroid.x, 4), "green_cover_source": green_cover_source}
@@ -429,6 +442,8 @@ def build_result(polygon_wgs84, df: pd.DataFrame, current: fs.Rotation, u: np.nd
                     "period_now": source["window"], "et0_method": source["et0_method"], **fs.then_vs_now(df)},
         "unprotected_months": sorted({current.calendar_month(m) for m in range(T) if u[m] == 1}),
         "rotations": rotations,
-        "ranking": rank(rotations, priority),
+        "ranking": ranking,
+        "ranking_demoted": demoted,
         "priority": priority,
+        "field_health": h,
     }

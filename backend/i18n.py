@@ -463,4 +463,161 @@ S: dict[str, dict[str, str]] = {
                 "el": "Το χωράφι είναι μεγαλύτερο από 500 εκτάρια. Σχεδιάστε ένα μόνο χωράφι."},
     "e_crop": {"en": "Unknown crop: {names}.", "de": "Unbekannte Kultur: {names}.",
                "el": "Άγνωστη καλλιέργεια: {names}."},
+
+    # ---- field health (pests, diseases, nutrients, soil)
+    "times_1": {"en": "once", "de": "einmal", "el": "μία φορά"},
+    "times_2": {"en": "twice", "de": "zweimal", "el": "δύο φορές"},
+    "times_n": {"en": "{n} times", "de": "{n}-mal", "el": "{n} φορές"},
+    "hw_repeat": {"en": "A cereal follows a cereal {times} in this rotation. Cereals share pests and diseases, and grain "
+                        "shed at harvest comes up in the next crop.",
+                  "de": "In dieser Fruchtfolge folgt {times} Getreide auf Getreide. Getreidearten teilen Schädlinge und "
+                        "Krankheiten, und Ausfallgetreide läuft in der Folgekultur auf.",
+                  "el": "Σε αυτή την αμειψισπορά ένα σιτηρό ακολουθεί σιτηρό {times}. Τα σιτηρά μοιράζονται εχθρούς "
+                        "και ασθένειες, και ο σπόρος που πέφτει στη συγκομιδή φυτρώνει στην επόμενη καλλιέργεια."},
+    "hw_repeat_issue": {"en": " You have seen pests or diseases on this field, so they are likely to carry over.",
+                        "de": " Sie hatten auf diesem Feld Schädlinge oder Krankheiten, sie werden wahrscheinlich "
+                              "übertragen.",
+                        "el": " Έχετε δει εχθρούς ή ασθένειες σε αυτό το χωράφι, οπότε πιθανότατα θα μεταφερθούν."},
+    "hw_bridge": {"en": "{cover} is a cereal too: before a cereal it keeps cereal pests, diseases and aphid-borne viruses "
+                        "alive.",
+                  "de": "{cover} ist ebenfalls Getreide: Vor Getreide erhält es Getreideschädlinge, -krankheiten und "
+                        "von Blattläusen übertragene Viren.",
+                  "el": "{cover}: είναι κι αυτό σιτηρό· πριν από σιτηρό κρατά ζωντανούς τους εχθρούς, τις ασθένειες "
+                        "και τους ιούς που μεταδίδουν οι αφίδες."},
+    "hw_clay": {"en": "On heavy, wet soil, cereals suffer more from root rots, soil-borne mosaic viruses and the cereal "
+                      "ground beetle.",
+                "de": "Auf schwerem, nassem Boden leidet Getreide stärker unter Fuß- und Wurzelfäulen, bodenbürtigen "
+                      "Mosaikviren und dem Getreidelaufkäfer.",
+                "el": "Σε βαρύ, υγρό έδαφος τα σιτηρά υποφέρουν περισσότερο από σήψεις ριζών, ιούς μωσαϊκού του "
+                      "εδάφους και τον ζάβρο (Zabrus)."},
+    "hw_high_n": {"en": "Plenty of nitrogen favours powdery mildew and the cereal leaf beetle in cereals.",
+                  "de": "Viel Stickstoff fördert im Getreide Echten Mehltau und das Getreidehähnchen.",
+                  "el": "Η πολλή αζωτούχος λίπανση ευνοεί το ωίδιο και τη λέμα (Lema) στα σιτηρά."},
+    "hw_demoted": {"en": "Not put first, because it keeps more cereals in a row on a field with past pest or disease "
+                         "problems.",
+                   "de": "Nicht an erster Stelle, weil es auf einem Feld mit früheren Schädlings- oder "
+                         "Krankheitsproblemen mehr Getreide hintereinander anbaut.",
+                   "el": "Δεν μπαίνει πρώτη, γιατί βάζει περισσότερα σιτηρά στη σειρά σε χωράφι με προηγούμενα "
+                         "προβλήματα εχθρών ή ασθενειών."},
+    "hb_fewer_repeats": {"en": "Fewer cereals in a row, so cereal pests and diseases build up less.",
+                         "de": "Weniger Getreide hintereinander, daher bauen sich Getreideschädlinge und -krankheiten "
+                               "weniger auf.",
+                         "el": "Λιγότερα σιτηρά στη σειρά, οπότε οι εχθροί και οι ασθένειες των σιτηρών αυξάνονται "
+                               "λιγότερο."},
+    "hb_no_grass": {"en": "No cereal cover crop was chosen, so cereal pests and diseases get no bridge between crops.",
+                    "de": "Es wurde keine Getreide-Zwischenfrucht gewählt, damit Getreideschädlinge und -krankheiten "
+                          "keine Brücke zwischen den Kulturen haben.",
+                    "el": "Δεν επιλέχθηκε σιτηρό ως καλλιέργεια κάλυψης, ώστε οι εχθροί και οι ασθένειες των σιτηρών "
+                          "να μη βρίσκουν «γέφυρα» ανάμεσα στις καλλιέργειες."},
+    "hb_legume_n": {"en": "You saw nitrogen shortage: the legume adds nitrogen for the next crop.",
+                    "de": "Sie haben Stickstoffmangel gesehen: Die Leguminose liefert Stickstoff für die Folgekultur.",
+                    "el": "Είδατε έλλειψη αζώτου: το ψυχανθές προσθέτει άζωτο για την επόμενη καλλιέργεια."},
+    "hb_legume_pk": {"en": "Legumes also make phosphorus, potassium and sulphur easier for the next crop to take up.",
+                     "de": "Leguminosen machen außerdem Phosphor, Kalium und Schwefel für die Folgekultur leichter "
+                           "verfügbar.",
+                     "el": "Τα ψυχανθή κάνουν επίσης τον φώσφορο, το κάλιο και το θείο πιο διαθέσιμα στην επόμενη "
+                           "καλλιέργεια."},
+    "hb_sandy_cover": {"en": "On sandy soil, the cover crop also holds nitrogen that would otherwise wash out.",
+                       "de": "Auf Sandboden hält die Zwischenfrucht außerdem Stickstoff, der sonst ausgewaschen würde.",
+                       "el": "Σε αμμώδες έδαφος η καλλιέργεια κάλυψης συγκρατεί και άζωτο που αλλιώς θα ξεπλενόταν."},
+    "hq_legume_fungal": {"en": "Legumes are prone to fungal diseases themselves. Which variety resists them best on this "
+                               "field?",
+                         "de": "Leguminosen sind selbst anfällig für Pilzkrankheiten. Welche Sorte ist auf diesem Feld "
+                               "am widerstandsfähigsten?",
+                         "el": "Τα ψυχανθή προσβάλλονται κι αυτά από μυκητολογικές ασθένειες. Ποια ποικιλία αντέχει "
+                               "καλύτερα σε αυτό το χωράφι;"},
+    "hq_seed": {"en": "Against rusts, bunts and smuts: which resistant varieties and certified, treated seed suit this "
+                      "field?",
+                "de": "Gegen Rost, Brand und Flugbrand: Welche resistenten Sorten und welches zertifizierte, gebeizte "
+                      "Saatgut passen zu diesem Feld?",
+                "el": "Για σκωριάσεις, δαυλίτες και άνθρακες: ποιες ανθεκτικές ποικιλίες και ποιος πιστοποιημένος, "
+                      "απολυμασμένος σπόρος ταιριάζουν σε αυτό το χωράφι;"},
+    "hq_late_sowing": {"en": "Sowing winter cereals later in autumn, after aphids stop flying, lowers the risk of barley "
+                             "yellow dwarf virus. Which sowing date suits this field?",
+                       "de": "Eine spätere Herbstsaat von Wintergetreide, nach dem Blattlausflug, senkt das Risiko für "
+                             "das Gelbverzwergungsvirus. Welcher Saattermin passt zu diesem Feld?",
+                       "el": "Η αργότερη φθινοπωρινή σπορά των χειμερινών σιτηρών, μετά τις πτήσεις των αφίδων, μειώνει "
+                             "τον κίνδυνο του ιού του κίτρινου νανισμού του κριθαριού. Ποια ημερομηνία σποράς ταιριάζει;"},
+    "hq_mosaic": {"en": "Which wheat and barley varieties resist soil-borne mosaic viruses on heavy soil?",
+                  "de": "Welche Weizen- und Gerstensorten sind auf schwerem Boden resistent gegen bodenbürtige "
+                        "Mosaikviren?",
+                  "el": "Ποιες ποικιλίες σιταριού και κριθαριού αντέχουν στους ιούς μωσαϊκού του εδάφους σε βαρύ "
+                        "έδαφος;"},
+    "hq_legume_instead": {"en": "You saw nitrogen shortage. Could a legume cover crop fit instead, to add nitrogen?",
+                          "de": "Sie haben Stickstoffmangel gesehen. Könnte stattdessen eine Leguminose als "
+                                "Zwischenfrucht passen, um Stickstoff zu liefern?",
+                          "el": "Είδατε έλλειψη αζώτου. Θα μπορούσε να ταιριάξει αντ' αυτού ένα ψυχανθές κάλυψης, "
+                                "για να προσθέσει άζωτο;"},
+    "hq_cut_n": {"en": "The legume adds nitrogen: how much can you cut fertiliser for the next crop?",
+                 "de": "Die Leguminose liefert Stickstoff: Wie viel Dünger können Sie bei der Folgekultur einsparen?",
+                 "el": "Το ψυχανθές προσθέτει άζωτο: πόσο μπορείτε να μειώσετε τη λίπανση στην επόμενη καλλιέργεια;"},
+    "hq_test_pk": {"en": "Test the soil for phosphorus and potassium before the next sowing.",
+                   "de": "Lassen Sie den Boden vor der nächsten Saat auf Phosphor und Kalium untersuchen.",
+                   "el": "Κάντε ανάλυση εδάφους για φώσφορο και κάλιο πριν από την επόμενη σπορά."},
+
+    # slide 1: field health box
+    "fh_reported": {"en": "You reported: {list}.", "de": "Sie haben angegeben: {list}.", "el": "Δηλώσατε: {list}."},
+    "fh_none": {"en": "You reported no pest or disease problems on this field.",
+                "de": "Sie haben keine Schädlings- oder Krankheitsprobleme auf diesem Feld angegeben.",
+                "el": "Δεν δηλώσατε προβλήματα εχθρών ή ασθενειών σε αυτό το χωράφι."},
+    "fh_unknown": {"en": "You are not sure about past pests and diseases, so the advice assumes nothing either way.",
+                   "de": "Sie sind bei früheren Schädlingen und Krankheiten unsicher; die Empfehlungen setzen daher "
+                         "nichts voraus.",
+                   "el": "Δεν είστε σίγουροι για προηγούμενους εχθρούς και ασθένειες, οπότε οι συμβουλές δεν "
+                         "υποθέτουν τίποτα."},
+    "fh_fungal": {"en": "fungal diseases", "de": "Pilzkrankheiten", "el": "μυκητολογικές ασθένειες"},
+    "fh_viral": {"en": "viral diseases", "de": "Viruskrankheiten", "el": "ιώσεις"},
+    "fh_pests": {"en": "insect pests", "de": "Schadinsekten", "el": "έντομα εχθρούς"},
+    "fh_effect": {"en": "Because of this, the options avoid cereal cover crops between cereals and crops next to their own "
+                        "family, and an option with more cereals in a row than today is never put first.",
+                  "de": "Deshalb vermeiden die Optionen Getreide-Zwischenfrüchte zwischen Getreide und Kulturen neben "
+                        "ihrer eigenen Familie, und eine Option mit mehr Getreide hintereinander als heute kommt nie an "
+                        "erste Stelle.",
+                  "el": "Γι' αυτό οι επιλογές αποφεύγουν σιτηρά κάλυψης ανάμεσα σε σιτηρά και καλλιέργειες δίπλα σε "
+                        "φυτά της ίδιας οικογένειας, και μια επιλογή με περισσότερα σιτηρά στη σειρά από σήμερα δεν "
+                        "μπαίνει ποτέ πρώτη."},
+    "fh_sandy": {"en": "Sandy soil holds little water, so dry spells hit crops harder and nitrogen washes out more easily.",
+                 "de": "Sandboden speichert wenig Wasser; Trockenperioden treffen die Kulturen härter, und Stickstoff "
+                       "wird leichter ausgewaschen.",
+                 "el": "Το αμμώδες έδαφος κρατά λίγο νερό, οπότε οι ξηρές περίοδοι πλήττουν περισσότερο τις "
+                       "καλλιέργειες και το άζωτο ξεπλένεται πιο εύκολα."},
+    "fh_acid": {"en": "Your soil may be acidic{ph}. Sugar beet, barley, rapeseed and clover grow poorly there: ask about "
+                      "liming.",
+                "de": "Ihr Boden ist möglicherweise sauer{ph}. Zuckerrübe, Gerste, Raps und Klee wachsen dort schlecht: "
+                      "Fragen Sie nach einer Kalkung.",
+                "el": "Το έδαφός σας ίσως είναι όξινο{ph}. Ζαχαρότευτλο, κριθάρι, ελαιοκράμβη και τριφύλλι δεν "
+                      "αναπτύσσονται καλά εκεί: ρωτήστε για ασβέστωση."},
+    "fh_acid_sure": {"en": "Your soil is acidic{ph}. Sugar beet, barley, rapeseed and clover grow poorly there: ask about "
+                           "liming.",
+                     "de": "Ihr Boden ist sauer{ph}. Zuckerrübe, Gerste, Raps und Klee wachsen dort schlecht: Fragen Sie "
+                           "nach einer Kalkung.",
+                     "el": "Το έδαφός σας είναι όξινο{ph}. Ζαχαρότευτλο, κριθάρι, ελαιοκράμβη και τριφύλλι δεν "
+                           "αναπτύσσονται καλά εκεί: ρωτήστε για ασβέστωση."},
+    "fh_chalky": {"en": "Your soil may be chalky{ph}. Phosphorus is harder for crops to take up there: ask which crops "
+                        "and varieties suit it.",
+                  "de": "Ihr Boden ist möglicherweise kalkreich{ph}. Phosphor ist dort schwerer verfügbar: Fragen Sie, "
+                        "welche Kulturen und Sorten passen.",
+                  "el": "Το έδαφός σας ίσως είναι ασβεστούχο{ph}. Εκεί ο φώσφορος απορροφάται δυσκολότερα: ρωτήστε "
+                        "ποιες καλλιέργειες και ποικιλίες ταιριάζουν."},
+    "fh_chalky_sure": {"en": "Your soil is chalky{ph}. Phosphorus is harder for crops to take up there: ask which crops "
+                             "and varieties suit it.",
+                       "de": "Ihr Boden ist kalkreich{ph}. Phosphor ist dort schwerer verfügbar: Fragen Sie, welche "
+                             "Kulturen und Sorten passen.",
+                       "el": "Το έδαφός σας είναι ασβεστούχο{ph}. Εκεί ο φώσφορος απορροφάται δυσκολότερα: ρωτήστε "
+                             "ποιες καλλιέργειες και ποικιλίες ταιριάζουν."},
+    "fh_ph": {"en": " (pH {ph})", "de": " (pH {ph})", "el": " (pH {ph})"},
+    "fh_from_analysis": {"en": "The soil notes come from your soil analysis.",
+                         "de": "Die Bodenhinweise stammen aus Ihrer Bodenuntersuchung.",
+                         "el": "Οι σημειώσεις για το έδαφος βασίζονται στην ανάλυση εδάφους σας."},
+    "fh_from_experience": {"en": "The soil notes come from what you see in the field; a soil test would confirm them.",
+                           "de": "Die Bodenhinweise beruhen auf Ihren Beobachtungen; eine Bodenuntersuchung würde sie "
+                                 "bestätigen.",
+                           "el": "Οι σημειώσεις για το έδαφος βασίζονται σε όσα βλέπετε στο χωράφι· μια ανάλυση εδάφους "
+                                 "θα τις επιβεβαίωνε."},
+    "src_health": {"en": "Pests and diseases: agronomy text on winter cereals, crop rotation, pests and diseases, with your "
+                         "answers about this field.",
+                   "de": "Schädlinge und Krankheiten: Fachtext zu Wintergetreide, Fruchtfolge, Schädlingen und "
+                         "Krankheiten, mit Ihren Angaben zu diesem Feld.",
+                   "el": "Εχθροί και ασθένειες: γεωπονικό κείμενο για τα χειμερινά σιτηρά, την αμειψισπορά, τους "
+                         "εχθρούς και τις ασθένειες, μαζί με τις απαντήσεις σας για το χωράφι."},
 }

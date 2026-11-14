@@ -50,6 +50,16 @@ class CropIn(BaseModel):
     harvest_month: int = Field(ge=1, le=12)
 
 
+class HealthIn(BaseModel):
+    """Field health answers. The first two are asked of every farmer; the soil ones are optional."""
+    issues: list[Literal["fungal", "viral", "pests", "none", "unknown"]] = ["unknown"]
+    nutrients: list[Literal["normal", "high_n", "low_n", "low_p", "low_k", "unknown"]] = ["unknown"]
+    soil_texture: Literal["sandy", "loamy", "clay", "unknown"] = "unknown"
+    soil_look: Literal["red", "light", "dark", "unknown"] = "unknown"
+    ph: float | None = Field(default=None, ge=3, le=10)
+    soil_source: Literal["analysis", "experience"] = "experience"
+
+
 class AnalyseIn(BaseModel):
     field: dict                                  # GeoJSON Polygon geometry, lon/lat
     crops: list[CropIn] = Field(min_length=1, max_length=6)
@@ -57,6 +67,7 @@ class AnalyseIn(BaseModel):
     priority: Literal["save_water", "build_soil", "income_forage"] = "build_soil"
     soil_answer: Literal["bare", "stubble", "other"] = "bare"
     lang: Literal["en", "de", "el"] = "en"
+    health: HealthIn = HealthIn()
 
 
 # --------------------------------------------------------------------------
@@ -210,7 +221,8 @@ def analyse(req: AnalyseIn):
         u, source = fs.u_from_farmer(current), "farmer"
     u = apply_soil_answer(current, u, req.soil_answer)
 
-    result = fr.build_result(poly, weather, current, u, source, req.irrigated, req.priority, TABLE, monthly)
+    result = fr.build_result(poly, weather, current, u, source, req.irrigated, req.priority, TABLE, monthly,
+                             req.health.model_dump())
     if demo:
         result["field"]["demo_field"] = demo["name"]
         result["field"]["slope"] = slope

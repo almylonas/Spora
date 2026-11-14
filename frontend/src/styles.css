@@ -370,6 +370,39 @@ details[open] > summary .chev { transform: rotate(90deg); }
 .tone-ask .more-icon { color: var(--sky); }
 .tone-ask .more-count { background: #e1ebf3; color: var(--sky); }
 
+/* ---------------- Field health: form and results ---------------- */
+.section-kicker { font-size: 0.8rem; color: var(--leaf); margin-bottom: 6px; letter-spacing: 0.02em; }
+.q-gap { margin-top: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chips.is-missing .chip { border-color: var(--beet); }
+.chip {
+  min-height: 44px; padding: 8px 14px; border: 1.5px solid var(--line); border-radius: var(--r-m); background: var(--paper);
+  display: inline-flex; align-items: center; gap: 8px; text-align: left; font-size: 0.95rem;
+}
+.chip strong { font-weight: 700; }
+.chip-wide { flex: 1 1 100%; flex-direction: column; align-items: flex-start; gap: 2px; }
+.chip-wide span { font-size: 0.85rem; color: var(--ink-soft); }
+.chip.is-on { border-color: var(--ink); background: var(--ink); color: var(--chalk); }
+.chip.is-on span { color: #c9d6cf; }
+.swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.2); flex: none; }
+.chip-wide .swatch { display: none; }
+.soil-optional > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; }
+.soil-optional > summary::-webkit-details-marker { display: none; }
+.soil-optional > summary > span { display: grid; gap: 2px; flex: 1; }
+.soil-optional > summary::after { content: "+"; font: 700 1.4rem/1 var(--font-head); color: var(--ink-soft); }
+.soil-optional[open] > summary::after { content: "−"; }
+.soil-optional[open] > summary { margin-bottom: 12px; }
+.ph-field { display: grid; gap: 6px; font-weight: 700; font-family: var(--font-head); font-stretch: 112%; }
+.ph-field input {
+  width: 120px; height: 44px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: var(--r-s);
+  background: var(--paper); font-family: var(--font-body); font-weight: 400;
+}
+.health-note { padding: 14px 16px; border-radius: var(--r-m); background: #fbf3e2; border: 1px solid #ecd9ac; }
+.health-note h4, .health-note h5 { display: flex; align-items: center; gap: 8px; }
+.health-note h5 { margin: 12px 0 0; font-family: var(--font-head); font-size: 0.9rem; color: var(--sky); }
+.health-note ul { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.bar-beet > span { background: var(--beet); }
+
 /* ---------------- Map extras: help, language, coordinates ---------------- */
 .rail-group { display: grid; gap: 6px; }
 .tool.is-accent { background: var(--ink); color: var(--straw); }
