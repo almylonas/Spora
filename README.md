@@ -1,4 +1,4 @@
-# FieldShift web app
+# Spora
 
 Draw a field, describe the rotation, and get the field's conditions and three rotations compared,
 in plain words with warnings and decisions.
