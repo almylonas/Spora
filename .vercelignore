@@ -1,0 +1,10 @@
+# Keep the deployment small: local environments, caches, tests and data-prep files stay out.
+**/.venv
+**/node_modules
+**/__pycache__
+backend/cache
+backend/tests
+backend/precompute.py
+backend/requirements-data.txt
+backend/juelich_field*.geojson
+frontend/dist
