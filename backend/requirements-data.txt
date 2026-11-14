@@ -1,0 +1,4 @@
+# Extra packages for precompute.py (satellite and elevation downloads)
+-r requirements.txt
+rasterio
+earthaccess
