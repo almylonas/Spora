@@ -63,6 +63,15 @@ Tests (no internet needed): `python tests/test_api.py`
   and says so on slide 1. Replace it with your demo field's file before judging.
 - Place search uses the free Nominatim service (about one request per second); keep the credits visible.
 
+## Languages, help and search
+
+- **Languages:** English, Deutsch and Ελληνικά. Interface text is in `frontend/src/i18n.tsx`; the result sentences
+  are written by the back end in the requested language (`backend/i18n.py`, chosen with `lang` in `/api/analyse`).
+  To add a language, add a column to both files.
+- **Help guide:** the ? button on the map opens a step-by-step guide; it is offered once on the first visit.
+- **Search:** place names (OpenStreetMap Nominatim) or coordinates, e.g. `50.92, 6.40`, `50,92; 6,40`,
+  `N 50.92 E 6.40` or `50°55'08"N 6°24'07"E`.
+
 ## Deploy on Vercel
 
 The repo deploys as one Vercel project: the website is built from `frontend/` and served as static files,

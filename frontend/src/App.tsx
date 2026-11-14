@@ -1,12 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MapScreen from "./MapScreen";
 import Landing from "./Landing";
 import FieldPanel from "./FieldPanel";
 import ResultsWindow from "./ResultsWindow";
+import HelpTour, { TourOffer } from "./HelpTour";
 import { analyse, areaHa, fetchCrops } from "./api";
+import { useI18n } from "./i18n";
 import type { Analysis, CropOption, CropRow, Priority, SoilAnswer } from "./types";
 
+const TOUR_SEEN = "spora-tour-seen";
+
 export default function App() {
+  const { lang, t } = useI18n();
   // The start page shows first; "#map" in the address opens the map directly (handy for the demo).
   const [started, setStarted] = useState(() => window.location.hash === "#map");
   useEffect(() => {
@@ -25,10 +30,21 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [data, setData] = useState<Analysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cropsError, setCropsError] = useState<string | null>(null);
+  const [cropsError, setCropsError] = useState(false);
+
+  // Help guide: offered once on the first visit to the map, and always available from the ? button
+  const [tourOpen, setTourOpen] = useState(false);
+  const [offer, setOffer] = useState(false);
+  useEffect(() => {
+    if (!started) return;
+    let seen = false;
+    try { seen = localStorage.getItem(TOUR_SEEN) === "1"; } catch { /* storage blocked */ }
+    if (!seen) setOffer(true);
+  }, [started]);
+  const markSeen = () => { try { localStorage.setItem(TOUR_SEEN, "1"); } catch { /* ignore */ } };
 
   useEffect(() => {
-    fetchCrops().then(setCrops).catch(() => setCropsError("The crop list could not be loaded. Reload the page."));
+    fetchCrops().then(setCrops).catch(() => setCropsError(true));
   }, []);
 
   const onField = useCallback((p: GeoJSON.Polygon | null) => { setField(p); setData(null); }, []);
@@ -44,20 +60,31 @@ export default function App() {
         irrigated,
         priority: over.priority ?? priority!,
         soil_answer: over.soilAnswer ?? soilAnswer,
+        lang,
       });
       setData(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The analysis failed. Try again.");
+      const m = e instanceof Error ? e.message : "";
+      setError(m === "ERR_SERVER" ? t("server_error") : m === "ERR_MISSING" ? t("missing_answers") : m || t("analysis_failed"));
     } finally {
       setBusy(false);
     }
   };
 
+  // The result sentences come from the server: ask again in the new language when it changes
+  const firstLang = useRef(true);
+  useEffect(() => {
+    if (firstLang.current) { firstLang.current = false; return; }
+    if (windowOpen && data) run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
   if (!started) return <Landing onStart={() => { window.location.hash = "map"; }} />;
 
   return (
     <div className="app">
-      <MapScreen field={field} onField={onField} onHome={() => { window.location.hash = ""; }} />
+      <MapScreen field={field} onField={onField} onHome={() => { window.location.hash = ""; }}
+        onHelp={() => { setOffer(false); setTourOpen(true); }} />
 
       {field && (
         <FieldPanel
@@ -70,7 +97,7 @@ export default function App() {
           priority={priority}
           setPriority={setPriority}
           busy={busy}
-          error={cropsError}
+          error={cropsError ? t("crops_load_error") : null}
           onRedraw={() => onField(null)}
           onAnalyse={() => { setData(null); setWindowOpen(true); run(); }}
         />
@@ -88,6 +115,14 @@ export default function App() {
           onClose={() => setWindowOpen(false)}
         />
       )}
+
+      {offer && !tourOpen && !windowOpen && (
+        <TourOffer
+          onStart={() => { setOffer(false); markSeen(); setTourOpen(true); }}
+          onSkip={() => { setOffer(false); markSeen(); }}
+        />
+      )}
+      {tourOpen && <HelpTour hasField={!!field} onClose={() => { setTourOpen(false); markSeen(); }} />}
     </div>
   );
 }

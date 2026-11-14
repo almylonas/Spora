@@ -4,6 +4,7 @@ export type SoilAnswer = "bare" | "stubble" | "other";
 export interface CropOption {
   crop: string;
   label: string;
+  labels?: Record<"en" | "de" | "el", string>;
   climate: string;
   sow_month: number;
   harvest_month: number;
@@ -20,6 +21,7 @@ export interface TimelineItem {
   year: number;
   month: number;
   crop: string | null;
+  crop_label?: string | null;
   cover_crop: boolean;
   protected: boolean;
   seen_from_space?: "covered" | "bare" | "no_image";
@@ -77,14 +79,12 @@ export interface AnalyseRequest {
   irrigated: boolean;
   priority: Priority;
   soil_answer: SoilAnswer;
+  lang: "en" | "de" | "el";
 }
 
-export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
-  "September", "October", "November", "December"];
-export const MONTH_INITIALS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
-
-export const PRIORITIES: { id: Priority; label: string; hint: string }[] = [
-  { id: "save_water", label: "Save water", hint: "Crops that need less water than they get now" },
-  { id: "build_soil", label: "Build healthier soil", hint: "Keep the soil covered and add nitrogen" },
-  { id: "income_forage", label: "Earn more or feed animals", hint: "More months with a crop you can sell or graze" },
+export const PRIORITIES: { id: Priority; label: "p_save_water" | "p_build_soil" | "p_income_forage";
+  hint: "p_save_water_hint" | "p_build_soil_hint" | "p_income_forage_hint" }[] = [
+  { id: "save_water", label: "p_save_water", hint: "p_save_water_hint" },
+  { id: "build_soil", label: "p_build_soil", hint: "p_build_soil_hint" },
+  { id: "income_forage", label: "p_income_forage", hint: "p_income_forage_hint" },
 ];

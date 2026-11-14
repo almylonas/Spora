@@ -2,11 +2,11 @@ import type { AnalyseRequest, Analysis, CropOption } from "./types";
 
 async function asJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    let message = "Something went wrong on the server. Try again.";
+    let message = "ERR_SERVER";            // the app turns these codes into words in the chosen language
     try {
       const body = await res.json();
       if (typeof body.detail === "string") message = body.detail;
-      else if (Array.isArray(body.detail)) message = "Some answers are missing. Check the form and try again.";
+      else if (Array.isArray(body.detail)) message = "ERR_MISSING";
     } catch {
       /* keep the default message */
     }
@@ -34,12 +34,13 @@ export interface Place {
   lat: number;
   lon: number;
   bbox?: [number, number, number, number];
+  coords?: boolean;   // typed coordinates rather than a place found by name
 }
 
 /** Place search with OpenStreetMap Nominatim (free; keep requests to about one per second). */
-export async function searchPlaces(q: string, signal?: AbortSignal): Promise<Place[]> {
+export async function searchPlaces(q: string, lang: string, signal?: AbortSignal): Promise<Place[]> {
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(q)}`;
-  const res = await fetch(url, { signal, headers: { "Accept-Language": "en" } });
+  const res = await fetch(url, { signal, headers: { "Accept-Language": lang } });
   if (!res.ok) return [];
   const rows: { display_name: string; lat: string; lon: string; boundingbox?: string[] }[] = await res.json();
   return rows.map((r) => ({

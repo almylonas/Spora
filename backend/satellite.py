@@ -79,13 +79,14 @@ def slope_stats(dem_path: str | Path, polygon) -> dict:
 def slope_words(slope: dict | None) -> str | None:
     if not slope:
         return None
+    from i18n import t
     if slope["mean_pct"] < 2 and slope["share_steep"] < 0.05:
-        return "Your field is almost flat, so rain washes little soil away even when it is bare."
+        return t("slope_flat")
     if slope["share_steep"] >= 0.3:
-        return "Much of your field is on a slope. Bare soil there washes away quickly in heavy rain."
+        return t("slope_much")
     if slope["share_steep"] >= 0.05:
-        return "Part of your field is on a slope. Bare soil there washes away faster in heavy rain."
-    return "Your field slopes gently. Bare soil can wash away in heavy rain."
+        return t("slope_part")
+    return t("slope_gentle")
 
 
 # --------------------------------------------------------------------------

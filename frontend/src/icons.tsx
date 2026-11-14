@@ -43,3 +43,22 @@ export const IconAsk = () => (
 export const IconArrow = ({ dir }: { dir: "left" | "right" }) => (
   <svg {...base}>{dir === "right" ? <path d="M5 12h14M13 6l6 6-6 6" /> : <path d="M19 12H5M11 6l-6 6 6 6" />}</svg>
 );
+export const IconHelp = () => (
+  <svg {...base}><circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6M12 16.6v.1" /></svg>
+);
+export const IconPin = () => (
+  <svg {...base} width={18} height={18}><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg>
+);
+export const IconDrop = () => (
+  <svg {...base} width={18} height={18}><path d="M12 3.5s6 6.6 6 10.8a6 6 0 0 1-12 0C6 10.1 12 3.5 12 3.5z" /></svg>
+);
+export const IconRain = () => (
+  <svg {...base} width={18} height={18}><path d="M7 15a4.5 4.5 0 1 1 1.2-8.8A5.5 5.5 0 0 1 18.5 9 3.5 3.5 0 0 1 17.5 15z" /><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5" /></svg>
+);
+export const IconSprout = () => (
+  <svg {...base} width={18} height={18}><path d="M12 21v-9M12 12c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2.5-5-6-5 0 3 2.5 5 6 5z" /></svg>
+);
+export const IconCoin = () => (
+  <svg {...base} width={18} height={18}><circle cx="12" cy="12" r="8" /><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.5.8-2.5 1.9 0 2.7 5 1.4 5 4.2 0 1.1-1 1.9-2.5 1.9-1.1 0-2-.4-2.5-1.2M12 6.5V8M12 16v1.5" /></svg>
+);
+export const IconChevron = () => <svg {...base} width={18} height={18}><path d="m9 6 6 6-6 6" /></svg>;

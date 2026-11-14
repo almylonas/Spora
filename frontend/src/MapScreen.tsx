@@ -3,8 +3,10 @@ import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { searchPlaces, type Place } from "./api";
+import { parseCoordinates } from "./coords";
+import { LANGS, useI18n } from "./i18n";
 import {
-  IconDraw, IconEdit, IconFit, IconLayers, IconLocate, IconMinus, IconPlus, IconSearch, IconTrash,
+  IconDraw, IconEdit, IconFit, IconHelp, IconLayers, IconLocate, IconMinus, IconPin, IconPlus, IconSearch, IconTrash,
 } from "./icons";
 
 const FIELD_STYLE: L.PathOptions = { color: "#E3B23C", weight: 3, fillColor: "#E3B23C", fillOpacity: 0.18 };
@@ -15,9 +17,10 @@ interface Props {
   field: GeoJSON.Polygon | null;
   onField: (p: GeoJSON.Polygon | null) => void;
   onHome: () => void;
+  onHelp: () => void;
 }
 
-export default function MapScreen({ field, onField, onHome }: Props) {
+export default function MapScreen(props: Props) {
   const [satellite, setSatellite] = useState(true);
   return (
     <MapContainer center={[50.92, 6.36]} zoom={14} zoomControl={false} className="map" attributionControl>
@@ -36,16 +39,18 @@ export default function MapScreen({ field, onField, onHome }: Props) {
           maxZoom={19}
         />
       )}
-      <MapTools field={field} onField={onField} onHome={onHome} satellite={satellite} setSatellite={setSatellite} />
+      <MapTools {...props} satellite={satellite} setSatellite={setSatellite} />
     </MapContainer>
   );
 }
 
-function MapTools({ field, onField, onHome, satellite, setSatellite }: Props & {
+function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: Props & {
   satellite: boolean; setSatellite: (v: boolean) => void;
 }) {
+  const { t } = useI18n();
   const map = useMap();
   const layerRef = useRef<L.Polygon | null>(null);
+  const pinRef = useRef<L.CircleMarker | null>(null);
   const [mode, setMode] = useState<Mode>("idle");
   const [locating, setLocating] = useState(false);
 
@@ -86,6 +91,7 @@ function MapTools({ field, onField, onHome, satellite, setSatellite }: Props & {
       return;
     }
     layerRef.current?.pm.disable();
+    pinRef.current?.remove();
     map.pm.enableDraw("Polygon", { pathOptions: FIELD_STYLE } as L.PM.DrawModeOptions);
     setMode("drawing");
   };
@@ -124,43 +130,58 @@ function MapTools({ field, onField, onHome, satellite, setSatellite }: Props & {
 
   const fit = () => { if (layerRef.current) map.fitBounds(layerRef.current.getBounds(), { padding: [80, 80] }); };
 
-  const hint =
-    mode === "drawing" ? "Tap each corner of your field. Tap the first corner again to finish."
-      : mode === "editing" ? "Drag the corners to adjust the outline, then press the edit button again."
-        : !field ? "Find your field, then press the draw button to outline it." : null;
+  const goTo = (p: Place) => {
+    pinRef.current?.remove();
+    if (p.coords) {
+      // Typed coordinates: fly close and mark the exact point
+      map.flyTo([p.lat, p.lon], 16);
+      pinRef.current = L.circleMarker([p.lat, p.lon], {
+        radius: 9, color: "#fff", weight: 3, fillColor: "#E3B23C", fillOpacity: 1,
+      }).addTo(map);
+    } else if (p.bbox) map.fitBounds([[p.bbox[0], p.bbox[2]], [p.bbox[1], p.bbox[3]]], { maxZoom: 16 });
+    else map.flyTo([p.lat, p.lon], 15);
+  };
+
+  const hint = mode === "drawing" ? t("hint_drawing") : mode === "editing" ? t("hint_editing") : !field ? t("hint_idle") : null;
 
   return (
     <>
       <div className="topbar" onDoubleClick={(e) => e.stopPropagation()}>
-        <button type="button" className="brand" onClick={onHome} aria-label="Spora, back to the start page">
+        <button type="button" className="brand" onClick={onHome} aria-label={t("home")}>
           <img className="brand-mark" src="/landing/spora-mark.png" alt="" aria-hidden="true" />
           Spora
         </button>
-        <SearchBox onPick={(p) => {
-          if (p.bbox) map.fitBounds([[p.bbox[0], p.bbox[2]], [p.bbox[1], p.bbox[3]]], { maxZoom: 16 });
-          else map.flyTo([p.lat, p.lon], 15);
-        }} />
+        <SearchBox onPick={goTo} />
       </div>
 
-      <nav className="toolrail" aria-label="Map tools" onDoubleClick={(e) => e.stopPropagation()}>
-        <ToolButton label={mode === "drawing" ? "Stop drawing" : "Draw your field"} active={mode === "drawing"} onClick={startDraw} primary>
-          <IconDraw />
-        </ToolButton>
-        <ToolButton label={mode === "editing" ? "Finish editing" : "Edit outline"} active={mode === "editing"} onClick={toggleEdit} disabled={!field}>
-          <IconEdit />
-        </ToolButton>
-        <ToolButton label="Delete outline" onClick={clear} disabled={!field && mode !== "drawing"}>
-          <IconTrash />
-        </ToolButton>
+      <nav className="toolrail" aria-label={t("map_tools")} onDoubleClick={(e) => e.stopPropagation()}>
+        <span data-tour="help"><ToolButton label={t("help")} onClick={onHelp} accent><IconHelp /></ToolButton></span>
+        <LangMenu />
         <span className="rail-gap" />
-        <ToolButton label="Zoom to my field" onClick={fit} disabled={!field}><IconFit /></ToolButton>
-        <ToolButton label={locating ? "Finding you…" : "Go to my location"} onClick={locate}><IconLocate /></ToolButton>
-        <ToolButton label={satellite ? "Show road map" : "Show satellite view"} onClick={() => setSatellite(!satellite)} active={!satellite}>
+        <span data-tour="draw">
+          <ToolButton label={mode === "drawing" ? t("stop_draw") : t("draw")} active={mode === "drawing"} onClick={startDraw} primary>
+            <IconDraw />
+          </ToolButton>
+        </span>
+        <span className="rail-group" data-tour="fix">
+          <ToolButton label={mode === "editing" ? t("finish_edit") : t("edit")} active={mode === "editing"} onClick={toggleEdit} disabled={!field}>
+            <IconEdit />
+          </ToolButton>
+          <ToolButton label={t("delete")} onClick={clear} disabled={!field && mode !== "drawing"}>
+            <IconTrash />
+          </ToolButton>
+        </span>
+        <span className="rail-gap" />
+        <ToolButton label={t("zoom_field")} onClick={fit} disabled={!field}><IconFit /></ToolButton>
+        <ToolButton label={locating ? t("locating") : t("locate")} onClick={locate}><IconLocate /></ToolButton>
+        <ToolButton label={satellite ? t("road_map") : t("sat_view")} onClick={() => setSatellite(!satellite)} active={!satellite}>
           <IconLayers />
         </ToolButton>
         <span className="rail-gap desktop-only" />
-        <span className="desktop-only"><ToolButton label="Zoom in" onClick={() => map.zoomIn()}><IconPlus /></ToolButton></span>
-        <span className="desktop-only"><ToolButton label="Zoom out" onClick={() => map.zoomOut()}><IconMinus /></ToolButton></span>
+        <span className="rail-group desktop-only" data-tour="zoom">
+          <ToolButton label={t("zoom_in")} onClick={() => map.zoomIn()}><IconPlus /></ToolButton>
+          <ToolButton label={t("zoom_out")} onClick={() => map.zoomOut()}><IconMinus /></ToolButton>
+        </span>
       </nav>
 
       {hint && <div className="hint" role="status">{hint}</div>}
@@ -168,13 +189,49 @@ function MapTools({ field, onField, onHome, satellite, setSatellite }: Props & {
   );
 }
 
-function ToolButton({ label, onClick, children, active, disabled, primary }: {
-  label: string; onClick: () => void; children: React.ReactNode; active?: boolean; disabled?: boolean; primary?: boolean;
+function LangMenu() {
+  const { lang, setLang, t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const current = LANGS.find((l) => l.id === lang)!;
+  return (
+    <span className="lang-menu" ref={ref} data-tour="lang">
+      <button type="button" className="tool tool-text" aria-haspopup="menu" aria-expanded={open}
+        aria-label={`${t("language")}: ${current.name}`} data-tip={t("language")} onClick={() => setOpen(!open)}>
+        {current.short}
+      </button>
+      {open && (
+        <ul className="lang-list" role="menu">
+          {LANGS.map((l) => (
+            <li key={l.id}>
+              <button type="button" role="menuitemradio" aria-checked={l.id === lang} lang={l.id}
+                className={l.id === lang ? "is-on" : ""} onClick={() => { setLang(l.id); setOpen(false); }}>
+                <span className="lang-short">{l.short}</span>{l.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </span>
+  );
+}
+
+function ToolButton({ label, onClick, children, active, disabled, primary, accent }: {
+  label: string; onClick: () => void; children: React.ReactNode; active?: boolean; disabled?: boolean;
+  primary?: boolean; accent?: boolean;
 }) {
   return (
     <button
       type="button"
-      className={`tool${active ? " is-active" : ""}${primary ? " is-primary" : ""}`}
+      className={`tool${active ? " is-active" : ""}${primary ? " is-primary" : ""}${accent ? " is-accent" : ""}`}
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
@@ -187,43 +244,57 @@ function ToolButton({ label, onClick, children, active, disabled, primary }: {
 }
 
 function SearchBox({ onPick }: { onPick: (p: Place) => void }) {
+  const { t, lang, num } = useI18n();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Place[]>([]);
+  const [empty, setEmpty] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    setEmpty(false);
+    const c = parseCoordinates(q);
+    if (c) {   // typed coordinates: no lookup needed
+      setResults([{ name: `${num(c.lat, 5)}, ${num(c.lon, 5)}`, lat: c.lat, lon: c.lon, coords: true }]);
+      setOpen(true);
+      return;
+    }
     if (q.trim().length < 3) { setResults([]); return; }
     const ctrl = new AbortController();
-    const t = setTimeout(() => {
-      searchPlaces(q, ctrl.signal).then((r) => { setResults(r); setOpen(true); }).catch(() => {});
+    const timer = setTimeout(() => {
+      searchPlaces(q, lang, ctrl.signal).then((r) => { setResults(r); setEmpty(r.length === 0); setOpen(true); }).catch(() => {});
     }, 600);
-    return () => { clearTimeout(t); ctrl.abort(); };
-  }, [q]);
+    return () => { clearTimeout(timer); ctrl.abort(); };
+  }, [q, lang, num]);
 
-  const pick = (p: Place) => { onPick(p); setOpen(false); setQ(p.name.split(",")[0]); };
+  const pick = (p: Place) => { onPick(p); setOpen(false); if (!p.coords) setQ(p.name.split(",")[0]); };
 
   return (
     <form
       className="search"
       role="search"
+      data-tour="search"
       onSubmit={(e) => { e.preventDefault(); if (results[0]) pick(results[0]); }}
     >
       <IconSearch />
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => results.length && setOpen(true)}
+        onFocus={() => (results.length || empty) && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search a village, town or address"
-        aria-label="Search a place"
+        placeholder={t("search_ph")}
+        aria-label={t("search_label")}
+        title={t("search_label")}
       />
-      {open && results.length > 0 && (
+      {open && (results.length > 0 || empty) && (
         <ul className="search-results" role="listbox">
           {results.map((r) => (
             <li key={`${r.lat},${r.lon}`}>
-              <button type="button" onMouseDown={() => pick(r)}>{r.name}</button>
+              <button type="button" onMouseDown={() => pick(r)} className={r.coords ? "is-coords" : ""}>
+                {r.coords ? <><IconPin /><span><strong>{t("go_coords")}</strong><br />{r.name}</span></> : r.name}
+              </button>
             </li>
           ))}
+          {empty && <li className="search-empty">{t("no_results")}</li>}
         </ul>
       )}
     </form>

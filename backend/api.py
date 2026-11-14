@@ -21,7 +21,9 @@ from shapely.geometry import shape
 import fieldshift_core as fs
 import fieldshift_rotations as fr
 import satellite as sat
+import i18n
 import verbal
+from i18n import t
 
 HERE = Path(__file__).parent
 # On Vercel only /tmp is writable; elsewhere the cache sits next to the code.
@@ -54,6 +56,7 @@ class AnalyseIn(BaseModel):
     irrigated: bool = False
     priority: Literal["save_water", "build_soil", "income_forage"] = "build_soil"
     soil_answer: Literal["bare", "stubble", "other"] = "bare"
+    lang: Literal["en", "de", "el"] = "en"
 
 
 # --------------------------------------------------------------------------
@@ -89,9 +92,8 @@ def load_weather(lat: float, lon: float) -> tuple:
     except Exception as e:  # network down or API error
         if FALLBACK_WEATHER.exists():
             df = fs.read_power_csv(FALLBACK_WEATHER)
-            return df, (f"NASA POWER could not be reached ({type(e).__name__}); "
-                        f"saved demo weather from {FALLBACK_WEATHER.stem} is shown instead.")
-        raise HTTPException(503, "The weather service could not be reached. Try again in a minute.")
+            return df, t("note_fallback", err=type(e).__name__, name=FALLBACK_WEATHER.stem)
+        raise HTTPException(503, t("e_weather"))
 
 
 def apply_soil_answer(rot, u: np.ndarray, answer: str) -> np.ndarray:
@@ -138,6 +140,7 @@ def timeline(entry: dict) -> list[dict]:
                 crop = c
         items.append({"year": m // 12 + 1, "month": m % 12 + 1,
                       "crop": crop["crop"] if crop else None,
+                      "crop_label": i18n.cap(i18n.crop(crop["crop"])) if crop else None,
                       "cover_crop": bool(crop and crop["cover_crop"]),
                       "protected": bool(entry["protected_by_month"][m])})
     return items
@@ -164,27 +167,29 @@ def crops():
         if row.type != "main":
             continue
         sow = row.sow_months[0]
-        out.append({"crop": name, "label": verbal.crop_label(name), "climate": row.climate,
+        out.append({"crop": name, "label": verbal.crop_label(name), "labels": i18n.crop_labels(name),
+                    "climate": row.climate,
                     "sow_month": sow, "harvest_month": (sow - 1 + int(row.season_months) - 1) % 12 + 1})
     return sorted(out, key=lambda c: c["label"])
 
 
 @app.post("/api/analyse")
 def analyse(req: AnalyseIn):
+    i18n.set_lang(req.lang)
     try:
         poly = shape(req.field)
     except Exception:
-        raise HTTPException(422, "The field outline could not be read. Draw it again.")
+        raise HTTPException(422, t("e_read"))
     if poly.geom_type != "Polygon" or not poly.is_valid:
-        raise HTTPException(422, "The field outline crosses itself. Draw it again, corner by corner.")
+        raise HTTPException(422, t("e_cross"))
     area = fs.polygon_area_ha(poly)
     if area < 1:
-        raise HTTPException(422, "The field is smaller than 1 hectare. Draw a larger area.")
+        raise HTTPException(422, t("e_small"))
     if area > 500:
-        raise HTTPException(422, "The field is larger than 500 hectares. Draw a single field.")
+        raise HTTPException(422, t("e_large"))
     unknown = [c.crop for c in req.crops if c.crop.lower() not in TABLE.index]
     if unknown:
-        raise HTTPException(422, f"Unknown crop: {', '.join(unknown)}.")
+        raise HTTPException(422, t("e_crop", names=", ".join(unknown)))
 
     cycle, T = build_cycle(req.crops)
     start_year = dt.date.today().year - T // 12

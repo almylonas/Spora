@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import fieldshift_core as fs
 
-MONTHS = fs.MONTH_NAMES
-MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August",
-               "September", "October", "November", "December"]
-PRIORITY_WORDS = {"save_water": "saving water", "build_soil": "building healthier soil",
-                  "income_forage": "earning more or feeding animals"}
+from i18n import cap, crop, month, t
+import i18n
+
+PRIORITY_KEYS = {"save_water": "p_save_water", "build_soil": "p_build_soil", "income_forage": "p_income_forage"}
 
 
 # --------------------------------------------------------------------------
@@ -16,55 +15,36 @@ PRIORITY_WORDS = {"save_water": "saving water", "build_soil": "building healthie
 # --------------------------------------------------------------------------
 def how_often(years: int, of: int = fs.WINDOW_YEARS) -> str:
     share = years / of
-    if share < 0.1:
-        return "rarely"
-    if share < 0.2:
-        return "now and then"
-    if share < 0.3:
-        return "about one year in four"
-    if share < 0.42:
-        return "about one year in three"
-    if share < 0.6:
-        return "about every other year"
-    if share < 0.85:
-        return "in most years"
-    return "almost every year"
+    for limit, key in ((0.1, "f_rarely"), (0.2, "f_now_then"), (0.3, "f_one_in_four"), (0.42, "f_one_in_three"),
+                       (0.6, "f_every_other"), (0.85, "f_most_years")):
+        if share < limit:
+            return t(key)
+    return t("f_almost_every")
 
 
 def share_words(pct: float) -> str:
-    if pct < 8:
-        return "very little"
-    if pct < 18:
-        return "a small part"
-    if pct < 28:
-        return "about a quarter"
-    if pct < 40:
-        return "about a third"
-    if pct < 60:
-        return "about half"
-    return "most"
+    for limit, key in ((8, "sh_very_little"), (18, "sh_small"), (28, "sh_quarter"), (40, "sh_third"),
+                       (60, "sh_half")):
+        if pct < limit:
+            return t(key)
+    return t("sh_most")
 
 
 def cover_words(months: float) -> str:
-    if months >= 11:
-        return "almost all year"
-    if months >= 9:
-        return "most of the year"
-    if months >= 7:
-        return "about two thirds of the year"
-    if months >= 5:
-        return "about half the year"
-    return "less than half the year"
+    for limit, key in ((11, "cv_almost_all"), (9, "cv_most"), (7, "cv_two_thirds"), (5, "cv_half")):
+        if months >= limit:
+            return t(key)
+    return t("cv_less_half")
 
 
 def month_ranges(cal_months: list[int]) -> str:
-    """[8,9,10,3,4] -> 'March to April and August to October'."""
+    """[8,9,10,3,4] -> 'March to April and August to October' (in the request language)."""
+    and_, to, all_year = i18n.RANGE_WORDS[i18n.lang()]
     ms = sorted(set(cal_months))
     if not ms:
         return ""
     if len(ms) == 12:
-        return "all year"
-    # build cyclic runs
+        return all_year
     runs, run = [], [ms[0]]
     for m in ms[1:]:
         if m == run[-1] + 1:
@@ -78,61 +58,56 @@ def month_ranges(cal_months: list[int]) -> str:
 
     def fmt(r):
         if len(r) == 1:
-            return MONTHS_LONG[r[0] - 1]
+            return month(r[0])
         if len(r) == 2:
-            return f"{MONTHS_LONG[r[0] - 1]} and {MONTHS_LONG[r[1] - 1]}"
-        return f"{MONTHS_LONG[r[0] - 1]} to {MONTHS_LONG[r[-1] - 1]}"
+            return f"{month(r[0])}{and_}{month(r[1])}"
+        return f"{month(r[0])}{to}{month(r[-1])}"
 
     parts = [fmt(r) for r in sorted(runs, key=lambda r: r[0])]
-    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + and_ + parts[-1]
 
 
 def crop_label(name: str) -> str:
-    return name[0].upper() + name[1:]
+    return cap(crop(name))
 
 
 # --------------------------------------------------------------------------
 # Slide 1: the field
 # --------------------------------------------------------------------------
-WEATHER_TOPICS = [
-    ("warm_days_per_year", "Warm days (25 °C and above)", "more common", "less common", "about as common as before"),
-    ("hot_days_per_year", "Hot days (30 °C and above)", "more common", "less common", "about as common as before"),
-    ("frost_days_per_year", "Frost days", "more common", "less common", "about as common as before"),
-    ("heavy_rain_days_per_year", "Heavy downpours", "more common", "less common", "about as common as before"),
-    ("dry_spells_per_year", "Dry spells in the growing season", "more common", "less common", "about as common as before"),
-    ("rain_mm_per_year", "Yearly rain", "higher", "lower", "about the same as before"),
+WEATHER_TOPICS = [   # (result key, label key, up, much up, down, much down, same)
+    ("warm_days_per_year", "w_warm", "t_more", "t_much_more", "t_less", "t_much_less", "t_same"),
+    ("hot_days_per_year", "w_hot", "t_more", "t_much_more", "t_less", "t_much_less", "t_same"),
+    ("frost_days_per_year", "w_frost", "t_more", "t_much_more", "t_less", "t_much_less", "t_same"),
+    ("heavy_rain_days_per_year", "w_heavy", "t_more", "t_much_more", "t_less", "t_much_less", "t_same"),
+    ("dry_spells_per_year", "w_dry", "t_more", "t_much_more", "t_less", "t_much_less", "t_same"),
+    ("rain_mm_per_year", "w_rain", "t_higher", "t_higher", "t_lower", "t_lower", "t_same_amount"),
 ]
 
 
 def weather_lines(weather: dict) -> list[dict]:
     out = []
-    for key, label, up, down, same in WEATHER_TOPICS:
+    for key, label_key, up, much_up, down, much_down, same in WEATHER_TOPICS:
         if key not in weather:
             continue
         then, now = weather[key]["then"], weather[key]["now"]
         diff = now - then
         rel = diff / then if then else (1.0 if diff > 0 else 0.0)
         small_counts = key != "rain_mm_per_year" and abs(diff) < 1
+        label = t(label_key)
         if small_counts or abs(rel) < 0.1:
-            trend, text = "same", same
+            trend, text = "same", t(same)
         else:
             trend = "up" if diff > 0 else "down"
-            word = up if diff > 0 else down
             strong = abs(rel) >= 0.5 and (then >= 3 or key == "rain_mm_per_year")
-            text = ("much " + word) if strong and word.endswith("common") else word
-        out.append({"topic": label, "trend": trend, "text": f"{label}: {text}."})
+            text = t((much_up if strong else up) if diff > 0 else (much_down if strong else down))
+        out.append({"topic": key, "trend": trend, "text": t("weather_line", label=label, text=text)})
     return out
 
 
 def water_line(extra_mm: float, irrigated: bool) -> str:
-    if extra_mm < 50:
-        s = "Rain covers what your crops need in most years."
-    elif extra_mm < 150:
-        s = "In summer your crops sometimes need more water than the rain gives."
-    else:
-        s = "In summer your crops regularly need more water than the rain gives."
+    s = t("water_ok") if extra_mm < 50 else t("water_some") if extra_mm < 150 else t("water_often")
     if irrigated and extra_mm >= 50:
-        s += " You can irrigate, so this mainly affects your water use and costs."
+        s += t("water_irrigate")
     return s
 
 
@@ -144,16 +119,18 @@ def warning_lines(entry: dict, crop_months: dict[str, list[int]]) -> list[str]:
     for x in entry.get("warning_details", []):
         freq = how_often(x["years"])
         if x["flag"] == "heavy_rain_on_open_soil":
-            out.append(f"Heavy rain falls on bare soil {freq}, which can wash soil away.")
+            out.append(t("warn_heavy", freq=freq, tail=t("tail_default")))
             continue
         c = crop_label(x["crop"])
-        when = month_ranges(crop_months.get(x["crop"], []))
+        months_ = month_ranges(crop_months.get(x["crop"], []))
+        when = t("in_when", when=months_) if months_ else ""
         if x["flag"] == "heat":
-            out.append(f"{c}: heat stress {('in ' + when) if when else ''} {freq}.".replace("  ", " "))
+            out.append(t("warn_heat", crop=c, when=when, freq=freq))
         elif x["flag"] == "late_frost":
-            out.append(f"{c}: damaging frost after sowing {freq}.")
+            out.append(t("warn_frost", crop=c, freq=freq))
         elif x["flag"] == "dry_spell":
-            out.append(f"{c}: two weeks or more without rain {('in ' + when) if when else ''} {freq}.".replace("  ", " "))
+            out.append(t("warn_dry", crop=c, when=when, freq=freq))
+    out = list(dict.fromkeys(out))   # a crop grown twice gives the same sentence twice
     return out
 
 
@@ -162,33 +139,33 @@ def compare_lines(cur: dict, alt: dict) -> tuple[list[str], list[str]]:
     out, worse = [], []
     d1 = alt["months_covered_per_year"] - cur["months_covered_per_year"]
     if d1 >= 1.5:
-        out.append("Your soil is protected for much longer each year.")
+        out.append(t("b_cover_much"))
     elif d1 >= 0.5:
-        out.append("Your soil is protected a little longer each year.")
+        out.append(t("b_cover"))
     elif d1 <= -0.5:
-        worse.append("Trade-off: your soil is bare for longer each year.")
+        worse.append(t("w_cover_worse"))
     c2, a2 = cur["rain_on_open_soil_pct"], alt["rain_on_open_soil_pct"]
     if a2 <= c2 * 0.6:
-        out.append("Much less rain falls on bare soil, so less soil is washed away.")
+        out.append(t("b_rain_much"))
     elif a2 < c2 * 0.9:
-        out.append("Less rain falls on bare soil.")
+        out.append(t("b_rain"))
     elif a2 > c2 * 1.1:
-        worse.append("Trade-off: more rain falls on bare soil.")
+        worse.append(t("w_rain_worse"))
     c3, a3 = cur["extra_water_mm_per_year"], alt["extra_water_mm_per_year"]
     if c3 >= 30 and a3 <= c3 * 0.7:
-        out.append("Your crops need much less extra water.")
+        out.append(t("b_water_much"))
     elif c3 >= 30 and a3 < c3 * 0.9:
-        out.append("Your crops need a little less extra water.")
+        out.append(t("b_water"))
     elif a3 > c3 * 1.1 and a3 - c3 >= 20:
-        worse.append("Trade-off: your crops need more extra water.")
+        worse.append(t("w_water_worse"))
     if alt["flags"]["adds_nitrogen"] and not cur["flags"]["adds_nitrogen"]:
-        out.append("A legume adds nitrogen, so the next crop needs less fertiliser.")
+        out.append(t("b_nitrogen"))
     if alt["flags"]["breaks_pest_cycles"] and not cur["flags"]["breaks_pest_cycles"]:
-        out.append("Crop families alternate, which helps break pest and disease cycles.")
+        out.append(t("b_pests"))
     nw_cur = {(x["flag"], x["crop"]) for x in cur.get("warning_details", [])}
     nw_alt = {(x["flag"], x["crop"]) for x in alt.get("warning_details", [])}
     if len(nw_alt) < len(nw_cur):
-        out.append("Fewer weather warnings than your current rotation.")
+        out.append(t("b_fewer_warn"))
     return out, worse
 
 
@@ -205,55 +182,60 @@ def rotation_text(entry: dict, cur: dict, info: dict, irrigated: bool, cover_nex
     if not entry.get("crops"):
         reason = entry.get("reason", "")
         if "already fits" in reason:
-            text = "Your rotation already fits the rain here, so there is no need to change crops to save water."
+            text = t("na_fits")
         elif "cover crop" in reason:
-            text = "No cover crop fits the gap in your rotation: the gap is too short, too cold or too dry."
+            text = t("na_cover")
         elif "lower-water crop" in reason:
-            text = "No crop that needs less water fits the same season on this field."
+            text = t("na_water")
         else:
-            text = reason[0].upper() + reason[1:] + "." if reason else "This option is not available for your field."
+            text = t("na_other")
         return {"id": rid, "available": False, "decision": None, "reason": text}
 
     warnings = warning_lines(entry, _crop_months(entry))
-    advisor = list(entry["card"]["advisor_questions"])
     if rid == "current":
-        decision = "Keep your current rotation."
-        changes = []
-        better = []
+        decision = t("keep")
+        changes, better = [], []
+        advisor = [t("q_risks_seen")]
     elif rid == "soil_building":
         cover = [c for c in entry["crops"] if c.get("cover_crop")][0]
-        name = cover["crop"]
-        decision = (f"Sow {name} in {MONTHS_LONG[cover['sow_month'] - 1]} and end it in "
-                    f"{MONTHS_LONG[cover['harvest_month'] - 1]}"
-                    + (f", before the {cover_next} is sown." if cover_next else "."))
-        changes = [f"Add {name} as a cover crop in the gap where your soil is bare."]
+        name = crop(cover["crop"])
+        name_obj = crop(cover["crop"], accusative=True)
+        before = t("before_next", next=crop(cover_next)) if cover_next else ""
+        decision = t("sow_cover", cover=name_obj, m1=month(cover["sow_month"], True),
+                     m2=month(cover["harvest_month"], True), before=before)
+        changes = [cap(t("add_cover", cover=name_obj))]
         better, worse = compare_lines(cur, entry)
         warnings = worse + warnings
-        warnings.append("A cover crop costs seed and work, and uses some water before the next crop.")
+        warnings.append(t("cover_cost"))
+        advisor = [t("q_cover_suits", c=name), t("q_cover_mix"), t("q_cover_subsidy")]
         if cover.get("legume"):
-            advisor.append("Are legume cover crops allowed on this field under local water-protection rules?")
+            advisor.append(t("q_legume_rules"))
         if cover.get("family") == "brassicaceae" and cover_next == "sugar beet":
-            advisor.append("Before sugar beet, use a nematode-resistant variety. Which one suits this field?")
+            advisor.append(t("q_nematode"))
     else:
-        new, old = info.get("chosen"), info.get("replaced")
-        decision = f"Grow {new} instead of {old}."
-        changes = [f"Replace {old} with {new}, which needs less water in the same season."]
+        new = crop(info.get("chosen", ""), accusative=True)
+        old = crop(info.get("replaced", ""), accusative=True)
+        decision = t("grow_instead", new=new, old=old)
+        changes = [cap(t("replace", old=old, new=new))]
         better, worse = compare_lines(cur, entry)
         warnings = worse + warnings
-        warnings.append(f"Market, price and machinery for {new} are not checked.")
+        warnings.append(t("market", new=new))
+        advisor = [t("q_buyer", c=new), t("q_machinery"), t("q_variety", c=crop(info.get("chosen", "")))]
     return {"id": rid, "available": True, "decision": decision, "changes": changes,
             "better": better, "warnings": warnings, "ask_advisor": advisor}
 
 
 def summary(rotations_text: list[dict], ranking: list[str], priority: str, names: dict[str, str]) -> str:
     if not ranking:
-        return "No rotation could be compared for this field."
+        return t("sum_none")
     best = ranking[0]
-    t = next(r for r in rotations_text if r["id"] == best)
+    prio = t(PRIORITY_KEYS[priority])
     if best == "current":
-        return (f"For {PRIORITY_WORDS[priority]}, your current rotation is already the best of the three. "
-                "Check the warnings below with your advisor.")
-    return f"For {PRIORITY_WORDS[priority]}, the best option is the {names[best].lower()}: {t['decision'][0].lower() + t['decision'][1:]}"
+        return t("sum_current", prio=prio)
+    d = next(r for r in rotations_text if r["id"] == best)["decision"]
+    if i18n.lang() == "en":
+        d = d[0].lower() + d[1:]
+    return t("sum_best", prio=prio, name=t("n_" + best), decision=d)
 
 
 def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | None) -> dict:
@@ -271,19 +253,18 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
     return {
         "shared_warnings": shared,
         "weather": weather_lines(result["weather"]),
-        "weather_period": f"{result['weather']['period_then']} compared with {result['weather']['period_now']}",
+        "weather_period": t("period", then=i18n.localise_period(result['weather']['period_then']),
+                            now=i18n.localise_period(result['weather']['period_now'])),
         "soil": {
             "open_months": open_months,
-            "text": (f"In your rotation the soil is bare in {month_ranges(open_months)} in at least one year."
-                     if open_months else "Your soil is covered all year."),
-            "covered": f"Something is growing on your field {cover_words(cur['months_covered_per_year'])}.",
-            "rain": f"{share_words(cur['rain_on_open_soil_pct']).capitalize()} of the year's rain falls while the soil is bare.",
+            "text": (t("soil_bare", ranges=month_ranges(open_months)) if open_months else t("soil_all_covered")),
+            "covered": t("soil_covered", cover=cover_words(cur['months_covered_per_year'])),
+            "rain": t("soil_rain", share=share_words(cur['rain_on_open_soil_pct'])),
         },
         "water": water_line(cur["extra_water_mm_per_year"], irrigated),
         "sources": [
-            "Weather: NASA POWER, for your wider area (about 50 km).",
-            "Bare months: " + ("satellite images of your field (Landsat and Sentinel-2)." if source_green == "satellite"
-                               else "the sowing and harvest months you entered."),
+            t("src_weather"),
+            t("src_bare_sat") if source_green == "satellite" else t("src_bare_farmer"),
         ],
         "rotations": rtexts,
         "summary": summary(rtexts, result["ranking"], result["priority"], names),
@@ -306,38 +287,35 @@ def add_satellite_and_slope(words: dict, seen: list[str] | None, rot, agreement:
         if agreement is None:
             agree = ""
         elif agreement >= 0.85:
-            agree = "Satellite images of your field match the crop months you entered."
+            agree = t("sat_match")
         elif agreement >= 0.65:
-            agree = "Satellite images mostly match the crop months you entered; the months that differ are marked."
+            agree = t("sat_mostly")
         else:
-            agree = ("Satellite images often differ from the crop months you entered. Check the months marked, "
-                     "or whether the crops are in the right order.")
-        words["satellite"] = {
-            "agreement": agree,
-            "blind": " ".join(x for x in [
-                (f"Clouds hid your field in {month_ranges(blind)} in some years; those months use the crop months you entered."
-                 if blind else ""),
-                ((f"The satellite record does not cover year {outside_years[0]} of your rotation, so that year uses "
-                  "the crop months you entered." if len(outside_years) == 1 else
-                  f"The satellite record does not cover years {', '.join(map(str, outside_years[:-1]))} and "
-                  f"{outside_years[-1]} of your rotation, so those years use the crop months you entered.")
-                 if outside_years else ""),
-            ] if x) or None,
-        }
-        words["sources"][1] = "Bare months: satellite images of your field (NASA HLS, Landsat and Sentinel-2), checked with your crop months."
+            agree = t("sat_differ")
+        notes = []
+        if blind:
+            notes.append(t("sat_clouds", ranges=month_ranges(blind)))
+        if len(outside_years) == 1:
+            notes.append(t("sat_out_one", y=outside_years[0]))
+        elif outside_years:
+            notes.append(t("sat_out_many", ys=", ".join(map(str, outside_years[:-1])), y=outside_years[-1]))
+        words["satellite"] = {"agreement": agree, "blind": " ".join(notes) or None}
+        words["sources"][1] = t("src_bare_checked")
     words["soil"]["slope"] = sat.slope_words(slope)
     if slope:
-        words["sources"].append("Slope: NASA elevation data (NASADEM / SRTM, 30 m).")
+        words["sources"].append(t("src_slope"))
         flat = slope["mean_pct"] < 2 and slope["share_steep"] < 0.05
         steep = slope["share_steep"] >= 0.3
 
+        default_tail = t("tail_default")
+
         def adjust(w: str) -> str:
-            if not w.startswith("Heavy rain falls on bare soil"):
+            if default_tail not in w:
                 return w
             if flat:
-                return w.replace("which can wash soil away", "but your field is flat, so little soil is washed away")
+                return w.replace(default_tail, t("tail_flat"))
             if steep:
-                return w.replace("which can wash soil away", "and much of your field is on a slope, so soil washes away easily")
+                return w.replace(default_tail, t("tail_steep"))
             return w
 
         words["shared_warnings"] = [adjust(w) for w in words["shared_warnings"]]
