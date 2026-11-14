@@ -3,3 +3,5 @@ frontend/dist/
 backend/cache/
 __pycache__/
 .venv/
+.vercel/
+.env*
