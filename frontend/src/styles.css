@@ -422,6 +422,12 @@ select.is-missing { border-color: var(--beet); }
   font-size: 0.875rem; color: rgba(255, 255, 255, 0.7);
 }
 
+/* Reduced motion: no moving background, only the green wash */
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg img { display: none; }
+  .hero-wash { background: linear-gradient(115deg, #0d6535 0%, #13a04a 100%); }
+}
+
 /* the one load moment: logo, then words, then buttons */
 @media (prefers-reduced-motion: no-preference) {
   .hero-logo, .hero-slogan, .hero-sub, .hero-actions { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
@@ -458,7 +464,20 @@ select.is-missing { border-color: var(--beet); }
 }
 .land-foot img { height: 32px; width: auto; opacity: 0.9; }
 
+/* Designed visuals (desktop, tablet): full-bleed image, its words kept for screen readers */
+.land-visual { position: relative; }
+.visual-img { display: block; width: 100%; height: auto; }
+.visual-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.land-cta {
+  display: grid; justify-items: center; gap: 18px; padding: 56px 16px 64px; text-align: center;
+  font-family: var(--font-head); font-stretch: 112%; font-weight: 700; font-size: 1.35rem;
+}
+
 @media (max-width: 760px) {
+  /* Phones: the words inside the images would be too small, so show the text version instead */
+  .visual-img { display: none; }
+  .visual-text { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;
+    padding: 64px 16px 8px; }
   .steps, .data-list { grid-template-columns: 1fr; }
-  .land-section { padding-top: 64px; }
+  .land-note { margin-bottom: 0; }
 }
