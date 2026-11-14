@@ -62,3 +62,18 @@ Tests (no internet needed): `python tests/test_api.py`
 - If NASA POWER cannot be reached, the API uses the saved Aachen weather in `backend/demo_weather_aachen.csv`
   and says so on slide 1. Replace it with your demo field's file before judging.
 - Place search uses the free Nominatim service (about one request per second); keep the credits visible.
+
+## Deploy on Vercel
+
+The repo deploys as one Vercel project: the website is built from `frontend/` and served as static files,
+and the FastAPI back end runs as a Python function (`api/index.py`, which loads `backend/api.py`).
+
+1. Push this folder to GitHub, with `vercel.json`, `requirements.txt`, `.vercelignore` and `api/` at the top level.
+2. On vercel.com: **Add New → Project**, import the repo, leave **Root Directory** as the repo root and
+   **Framework Preset** as "Other". The settings in `vercel.json` are picked up automatically.
+3. Deploy. No API keys or NASA login are needed: weather comes live from NASA POWER, and the demo field's
+   satellite cover and slope are read from `backend/demo_fields/*.json`.
+
+Notes: the first analysis of a new location downloads 45 years of weather (10–30 s); the function may run up to
+60 s. Vercel only allows writing to `/tmp`, so the weather cache lives there and is lost when the function
+restarts. If NASA POWER cannot be reached, the saved Aachen weather is used and the results say so.
