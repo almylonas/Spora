@@ -1,0 +1,8 @@
+# Python packages for the Vercel function (api/index.py). The same list as backend/requirements.txt,
+# without uvicorn (Vercel runs the app itself).
+fastapi
+numpy
+pandas
+requests
+shapely
+pyproj
