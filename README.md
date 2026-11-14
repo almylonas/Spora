@@ -39,9 +39,3 @@ Deploy that one service (for example on Render) and the whole app is online.
 harvest months, irrigation yes/no, the priority, and the answer to "is the soil really bare after harvest?".
 It returns the numeric result (agreed format), the words for both slides, and a month-by-month timeline
 for each rotation.
-
-## Good to know
-- If NASA POWER cannot be reached, the API uses the saved Aachen weather in `backend/demo_weather_aachen.csv`
-  and says so on slide 1. Replace it with your demo field's file before judging.
-- Satellite green cover is not wired into the API yet: bare months come from the crop months the farmer enters.
-- Place search uses the free Nominatim service (about one request per second); keep the credits visible.
