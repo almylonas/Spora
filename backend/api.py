@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -210,7 +211,11 @@ def analyse(req: AnalyseIn):
     info = {r["id"]: r.get("generation", {}) for r in result["rotations"]}
     sb = next(r for r in result["rotations"] if r["id"] == "soil_building")
     words = verbal.build(result, info, req.irrigated, next_crop_after_cover(sb))
-    verbal.add_satellite_and_slope(words, seen, current, agreement, slope)
+    in_record = None
+    if monthly is not None:
+        sat_years = set(monthly.index.year)   # whole calendar years seen by the satellite
+        in_record = [current.start_year + m // 12 in sat_years for m in range(current.length_months)]
+    verbal.add_satellite_and_slope(words, seen, current, agreement, slope, in_record)
     for r in result["rotations"]:
         r["timeline"] = timeline(r)
         if seen and r["timeline"] and r["id"] == "current":
