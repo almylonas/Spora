@@ -35,8 +35,13 @@ def download_elevation(polygon, cache_dir: Path) -> Path:
         files = earthaccess.download(found[:1], local_path=str(cache_dir))
         path = Path(files[0])
         if path.suffix == ".zip":
-            inner = next(n for n in zipfile.ZipFile(path).namelist() if n.lower().endswith(".hgt"))
-            return Path(f"zip://{path}!/{inner}")
+            # Unpack the .hgt tile next to the zip: a plain file path works the same on Windows and Linux.
+            with zipfile.ZipFile(path) as zf:
+                inner = next(n for n in zf.namelist() if n.lower().endswith(".hgt"))
+                out = cache_dir / Path(inner).name
+                if not out.exists():
+                    out.write_bytes(zf.read(inner))
+            return out
         return path
     raise RuntimeError("no NASADEM or SRTM tile found for this field")
 
