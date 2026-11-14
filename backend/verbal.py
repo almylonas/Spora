@@ -294,12 +294,15 @@ def build(result: dict, info_by_id: dict, irrigated: bool, cover_next: str | Non
 # Satellite and slope (demo fields only)
 # --------------------------------------------------------------------------
 def add_satellite_and_slope(words: dict, seen: list[str] | None, rot, agreement: float | None,
-                            slope: dict | None) -> None:
+                            slope: dict | None, in_record: list[bool] | None = None) -> None:
+    """in_record[m]: cycle month m falls inside the satellite record (months outside it are not 'cloudy')."""
     import satellite as sat
 
     words["satellite"] = None
     if seen:
-        blind = sorted({rot.calendar_month(m) for m, s in enumerate(seen) if s == "no_image"})
+        inside = in_record or [True] * len(seen)
+        blind = sorted({rot.calendar_month(m) for m, s in enumerate(seen) if s == "no_image" and inside[m]})
+        outside_years = sorted({m // 12 + 1 for m in range(len(seen)) if not inside[m]})
         if agreement is None:
             agree = ""
         elif agreement >= 0.85:
@@ -311,8 +314,15 @@ def add_satellite_and_slope(words: dict, seen: list[str] | None, rot, agreement:
                      "or whether the crops are in the right order.")
         words["satellite"] = {
             "agreement": agree,
-            "blind": (f"Clouds hid your field in {month_ranges(blind)}; those months use the crop months you entered."
-                      if blind else None),
+            "blind": " ".join(x for x in [
+                (f"Clouds hid your field in {month_ranges(blind)} in some years; those months use the crop months you entered."
+                 if blind else ""),
+                ((f"The satellite record does not cover year {outside_years[0]} of your rotation, so that year uses "
+                  "the crop months you entered." if len(outside_years) == 1 else
+                  f"The satellite record does not cover years {', '.join(map(str, outside_years[:-1]))} and "
+                  f"{outside_years[-1]} of your rotation, so those years use the crop months you entered.")
+                 if outside_years else ""),
+            ] if x) or None,
         }
         words["sources"][1] = "Bare months: satellite images of your field (NASA HLS, Landsat and Sentinel-2), checked with your crop months."
     words["soil"]["slope"] = sat.slope_words(slope)
