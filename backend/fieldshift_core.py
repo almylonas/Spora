@@ -125,9 +125,12 @@ def fetch_power_daily(lat: float, lon: float, start: str = "19810101", end: str 
     df.attrs["elevation_m"] = float(coords[2]) if len(coords) > 2 else None
     print(f"POWER: {len(df)} days in {time.time() - t0:.1f} s, last valid day {df.index.max().date()}, "
           f"elevation {df.attrs['elevation_m']} m")
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(cache)
-    cache.with_suffix(".json").write_text(json.dumps({"elevation_m": df.attrs["elevation_m"]}))
+    try:   # caching is a speed-up only; a read-only disk (e.g. serverless hosting) must not break the analysis
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(cache)
+        cache.with_suffix(".json").write_text(json.dumps({"elevation_m": df.attrs["elevation_m"]}))
+    except OSError as e:
+        print(f"POWER: could not write cache ({e}); continuing without it")
     return df
 
 
