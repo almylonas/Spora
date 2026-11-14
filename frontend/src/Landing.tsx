@@ -19,10 +19,9 @@ export default function Landing({ onStart }: { onStart: () => void }) {
   return (
     <div className="landing">
       <section className="hero">
-        <picture className="hero-bg" aria-hidden="true">
-          <source srcSet="/landing/field-still.jpg" media="(prefers-reduced-motion: reduce)" />
+        <div className="hero-bg" aria-hidden="true">
           <img src="/landing/field.gif" alt="" />
-        </picture>
+        </div>
         <div className="hero-wash" aria-hidden="true" />
 
         <div className="hero-content">
@@ -44,33 +43,45 @@ export default function Landing({ onStart }: { onStart: () => void }) {
         <p className="hero-credit">NASA Space Apps Challenge 2026, Aachen</p>
       </section>
 
-      <section className="land-section" ref={howRef} aria-labelledby="how-title">
-        <h2 id="how-title" className="land-title">From a drawn field to a decision in three steps</h2>
-        <ol className="steps">
-          {STEPS.map((s, i) => (
-            <li key={s.title}>
-              <span className="step-num" aria-hidden="true">{i + 1}</span>
-              <h3>{s.title}</h3>
-              <p>{s.text}</p>
-            </li>
-          ))}
-        </ol>
+      {/* Desktop and tablet: the designed visuals. Their words are repeated in the text blocks, which screen
+          readers always read and phones show instead (the words inside the images are too small there). */}
+      <section className="land-visual" ref={howRef} aria-labelledby="how-title">
+        <img className="visual-img" src="/landing/steps.jpg" alt="" width={1920} height={1088} loading="lazy" />
+        <div className="visual-text">
+          <h2 id="how-title" className="land-title">From a drawn field to an actionable decision in three simple steps</h2>
+          <ol className="steps">
+            {STEPS.map((s, i) => (
+              <li key={s.title}>
+                <span className="step-num" aria-hidden="true">{i + 1}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
-      <section className="land-section land-data" aria-labelledby="data-title">
-        <h2 id="data-title" className="land-title">Built only on open NASA data</h2>
-        <dl className="data-list">
-          {DATA.map((d) => (
-            <div key={d.name}>
-              <dt>{d.name}</dt>
-              <dd>{d.text}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="land-note">
-          Weather and soil-cover results work for any field. Crop suggestions are checked for North Rhine-Westphalia
-          first; elsewhere, confirm them with a local advisor.
-        </p>
+      <section className="land-visual" aria-labelledby="data-title">
+        <img className="visual-img" src="/landing/open-data.jpg" alt="" width={1920} height={1088} loading="lazy" />
+        <div className="visual-text">
+          <h2 id="data-title" className="land-title">Built only on open NASA and other open data sources</h2>
+          <dl className="data-list">
+            {DATA.map((d) => (
+              <div key={d.name}>
+                <dt>{d.name}</dt>
+                <dd>{d.text}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="land-note">
+            Weather and soil-cover results work for any field. Crop suggestions are checked for North Rhine-Westphalia
+            first; elsewhere, confirm them with a local advisor.
+          </p>
+        </div>
+      </section>
+
+      <section className="land-cta">
+        <p>Ready to look at your own field?</p>
         <button type="button" className="hero-cta" onClick={onStart}>Draw your field</button>
       </section>
 
