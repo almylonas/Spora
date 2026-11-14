@@ -20,7 +20,7 @@ HERE = Path(__file__).parent
 
 
 def read_polygon(path):
-    g = json.loads(Path(path).read_text(encoding="utf-8"))
+    g = json.loads(Path(path).read_text(encoding="utf-8-sig"))
     if g.get("type") == "FeatureCollection":
         g = g["features"][0]
     if g.get("type") == "Feature":
