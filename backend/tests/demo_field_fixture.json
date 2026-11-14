@@ -1,0 +1,221 @@
+{
+ "name": "test_field",
+ "polygon": {
+  "type": "Polygon",
+  "coordinates": [
+   [
+    [
+     6.362,
+     50.92
+    ],
+    [
+     6.362,
+     50.925
+    ],
+    [
+     6.355,
+     50.925
+    ],
+    [
+     6.355,
+     50.92
+    ],
+    [
+     6.362,
+     50.92
+    ]
+   ]
+  ]
+ },
+ "green_cover": [
+  {
+   "month": "2023-01",
+   "ndvi": 0.18,
+   "images": 0
+  },
+  {
+   "month": "2023-02",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2023-03",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2023-04",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2023-05",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-06",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-07",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-08",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-09",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-10",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2023-11",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2023-12",
+   "ndvi": 0.7,
+   "images": 0
+  },
+  {
+   "month": "2024-01",
+   "ndvi": 0.7,
+   "images": 0
+  },
+  {
+   "month": "2024-02",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-03",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-04",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-05",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-06",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-07",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-08",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-09",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2024-10",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-11",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2024-12",
+   "ndvi": 0.7,
+   "images": 0
+  },
+  {
+   "month": "2025-01",
+   "ndvi": 0.7,
+   "images": 0
+  },
+  {
+   "month": "2025-02",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-03",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-04",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-05",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-06",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-07",
+   "ndvi": 0.7,
+   "images": 3
+  },
+  {
+   "month": "2025-08",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2025-09",
+   "ndvi": 0.45,
+   "images": 3
+  },
+  {
+   "month": "2025-10",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2025-11",
+   "ndvi": 0.18,
+   "images": 3
+  },
+  {
+   "month": "2025-12",
+   "ndvi": 0.18,
+   "images": 0
+  }
+ ],
+ "slope": {
+  "mean_pct": 4.0,
+  "max_pct": 4.0,
+  "share_steep": 0.0,
+  "pixels": 468
+ },
+ "notes": {
+  "test": true
+ }
+}
