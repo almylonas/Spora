@@ -1,4 +1,4 @@
-"""FieldShift web API.
+"""Spora web API.
 
 Run (development):  uvicorn api:app --reload --port 8000
 The built front end (frontend/dist) is served from the same server when present.
@@ -24,11 +24,12 @@ import satellite as sat
 import verbal
 
 HERE = Path(__file__).parent
-CACHE = Path(os.environ.get("FIELDSHIFT_CACHE", HERE / "cache"))
+# On Vercel only /tmp is writable; elsewhere the cache sits next to the code.
+CACHE = Path(os.environ.get("FIELDSHIFT_CACHE") or ("/tmp/spora-cache" if os.environ.get("VERCEL") else HERE / "cache"))
 # Saved weather used when NASA POWER cannot be reached (e.g. no internet during a demo).
 FALLBACK_WEATHER = Path(os.environ.get("FIELDSHIFT_FALLBACK_WEATHER", HERE / "demo_weather_aachen.csv"))
 
-app = FastAPI(title="FieldShift API")
+app = FastAPI(title="Spora API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 TABLE = fr.load_crop_table(HERE / "crops.csv")
 
