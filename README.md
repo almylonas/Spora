@@ -61,6 +61,9 @@ satellite and road map, and zoom.
 Press the draw button and tap the field's corners; tap the first corner again to finish. A pencil moves corners;
 a bin starts again. A hint at the bottom of the screen always says what to do next.
 
+Every outline is checked at once: an outline that is mostly at sea (Natural Earth land polygons) or on a lake,
+river or reservoir (OpenStreetMap) turns red, says why, and cannot be analysed until it is redrawn on land.
+
 ### 5. Tell Spora what grows there
 A form opens beside the field (from the bottom on a phone):
 - the crops in the order they are grown, each with its sowing and harvest month (sensible months are filled in
@@ -89,16 +92,25 @@ Then **Analyse my field**.
 - **Where this comes from:** the data behind each statement.
 
 ### 7. Results, page 2: your options
+The advice comes first, in words; the numbers follow for those who want them.
 - One sentence at the top with the decision, for example: *"For building healthier soil, the best option is the
   soil-building rotation: sow winter rye in September and end it in February, before the sugar beet is sown."*
   Switching the priority re-ranks the options instantly.
 - Warnings that apply to every option are folded into one line, so the cards show only what differs.
-- Three cards. Each starts with what to do, then three lines **at a glance** (soil covered, rain on bare soil,
-  extra water, and cereal after cereal when the rotation has cereals), each with a small bar and a check mark
-  (better than today), a warning mark (worse) or a dash (about the same). Below: the month strip and three
-  lines that open on tap: *What gets better*, *Watch out for*, *Ask your advisor*.
+- Three cards. Each starts with what to do, then **Why choose it** and **Watch out for** as plain sentences, always
+  visible (the first few, with "Show more"), and *Ask your advisor* one tap away. Below, **In numbers**: soil
+  covered, rain on bare soil, extra water and cereal after cereal, each with a small bar and a check mark (better
+  than today), a warning mark (worse) or a dash (about the same), and the months strip one tap away.
+- **Read aloud** on the decision and on every card reads the advice with the device's own voice, in the chosen
+  language, for farmers who prefer listening to reading.
 
-### 8. Three languages
+### 8. Save fields
+**Save field** (in the form and in the results) keeps the outline, all answers and the latest results. **My fields**
+on the map lists them with a small drawing of each outline: open one to see its results again, rename or delete
+it. Fields are saved on the farmer's device, with no account; **Export** writes them to a file that can be kept as
+a copy or imported on another device.
+
+### 9. Three languages
 English, Deutsch and Ελληνικά, switchable on the start page, on the map and inside the results. Everything is
 translated, including crop names, months and the result sentences. The choice is remembered on the device.
 
@@ -136,6 +148,7 @@ and the field's mean slope is 3 %.
 | Landwirtschaftskammer NRW and FAO crop calendars | Sowing and harvest months, cover crops and crop limits in the crop table (`backend/crops.csv`) |
 | NRW field blocks (ogc-api.nrw.de) | The outline of the demo field |
 | OpenStreetMap / Nominatim, Esri World Imagery | Map tiles and place search |
+| Natural Earth 1:10m land (via world-atlas) and OpenStreetMap water areas (Overpass API) | Refusing outlines at sea or on lakes, rivers and reservoirs |
 
 Only open data is used; no paid services and no Google Earth Engine.
 
@@ -212,6 +225,8 @@ bare soil. They are written as how often they happen, for example "about one yea
 - Köppen climate zones instead of the two-zone rule.
 - Satellite cover and slope for any drawn field, computed on demand.
 - More languages and more regions, each added by filling in a table.
+- Accounts and a database (for example Postgres on Neon) so fields follow the farmer across devices and can be
+  shared with an advisor.
 
 ---
 
@@ -230,6 +245,8 @@ api/        Vercel entry point for the back end
 | Crop form | `frontend/src/FieldPanel.tsx` |
 | Results window | `frontend/src/ResultsWindow.tsx`, `MonthStrip.tsx` |
 | Help guide | `frontend/src/HelpTour.tsx` |
+| Saved fields (on the device), export and import | `frontend/src/storage.ts`, `MyFields.tsx` |
+| Land and water check | `backend/landcheck.py`, `backend/data/land-10m.json` |
 | Interface text (EN, DE, EL) | `frontend/src/i18n.tsx` |
 | Calculations | `backend/fieldshift_core.py`, `backend/fieldshift_rotations.py` |
 | Field health rules (pests, diseases, nutrients, soil) | `backend/health.py` |
@@ -237,7 +254,7 @@ api/        Vercel entry point for the back end
 | Crop table | `backend/crops.csv` |
 | Satellite and slope for demo fields | `backend/satellite.py`, `backend/precompute.py`, `backend/demo_fields/` |
 
-**API.** `GET /api/crops` lists crops with names in all three languages. `POST /api/analyse` takes the field
+**API.** `POST /api/check_field` checks an outline (size, shape, on land) in the farmer's language. `GET /api/crops` lists crops with names in all three languages. `POST /api/analyse` takes the field
 outline (GeoJSON), the crops in order with sowing and harvest months, irrigation, priority, the answer about
 bare soil after harvest, the field-health answers (`health`) and `lang` (`en`, `de` or `el`). It returns the numbers, the sentences for both pages and a
 month-by-month timeline for each rotation.

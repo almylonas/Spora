@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PRIORITIES, type CropOption, type CropRow, type Health, type Issue, type Nutrient, type Priority } from "./types";
 import { MONTHS, useI18n, type Key } from "./i18n";
-import { IconPlus, IconTrash, IconWarn } from "./icons";
+import { IconPlus, IconSave, IconTrash, IconWarn } from "./icons";
 
 interface Props {
   areaHa: number;
@@ -18,14 +18,18 @@ interface Props {
   onRedraw: () => void;
   busy: boolean;
   error: string | null;
+  fieldProblem?: string | null;
+  checking?: boolean;
+  onSave: () => void;
+  savedName?: string | null;
 }
 
-let nextId = 100;
+let nextId = Date.now();   // unique row ids, also next to rows of a reopened saved field
 
 export default function FieldPanel(p: Props) {
   const { t, lang, num } = useI18n();
   const [touched, setTouched] = useState(false);
-  const sizeProblem = p.areaHa < 1 ? t("size_small") : p.areaHa > 500 ? t("size_large") : null;
+  const sizeProblem = p.areaHa < 1 ? t("size_small") : p.areaHa > 500 ? t("size_large") : (p.fieldProblem ?? null);
   const missing = p.rows.some((r) => !r.crop) ? t("need_crop")
     : p.irrigated === null ? t("need_irr")
       : p.health.issues.length === 0 ? t("need_issues")
@@ -49,11 +53,27 @@ export default function FieldPanel(p: Props) {
     <aside className="panel" aria-labelledby="panel-title" data-tour="panel">
       <header className="panel-head">
         <div>
-          <h2 id="panel-title">{t("your_field")}</h2>
+          <h2 id="panel-title">{p.savedName ?? t("your_field")}</h2>
           <p className="muted">{t("ha_outlined", { ha: num(p.areaHa, 1) })}</p>
         </div>
-        <button type="button" className="link-button" onClick={p.onRedraw}>{t("draw_again")}</button>
+        <div className="panel-head-actions">
+          <button type="button" className="save-button" onClick={p.onSave} data-tour="save" disabled={!!sizeProblem}>
+            <IconSave /> {t("save_field")}
+          </button>
+          <button type="button" className="link-button" onClick={p.onRedraw}>{t("draw_again")}</button>
+        </div>
       </header>
+
+      {sizeProblem && (
+        <div className="field-problem" role="alert">
+          <IconWarn />
+          <div>
+            <p>{sizeProblem}</p>
+            <button type="button" className="secondary" onClick={p.onRedraw}>{t("draw_again")}</button>
+          </div>
+        </div>
+      )}
+      {p.checking && !sizeProblem && <p className="field-checking muted small" role="status">{t("checking_field")}</p>}
 
       <section className="panel-section">
         <h3>{t("grow_q")}</h3>

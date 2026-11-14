@@ -68,6 +68,12 @@ def run():
     if sb.get("crops"):
         assert not any(c["cover_crop"] and c["family"] == "poaceae" for c in sb["crops"]), "no cereal cover with diseases"
 
+    # Land check: an outline in the North Sea is refused, in the chosen language
+    sea = {"type": "Polygon", "coordinates": [[[7.0, 54.0], [7.006, 54.0], [7.006, 54.004], [7.0, 54.004], [7.0, 54.0]]]}
+    r = c.post("/api/check_field", json={"field": sea, "lang": "de"})
+    assert r.status_code == 422 and "Meer" in r.json()["detail"], r.json()
+    assert c.post("/api/analyse", json={"field": sea, "crops": CROPS}).status_code == 422
+
     # Input checks
     tiny = {"type": "Polygon", "coordinates": [[[6.355, 50.92], [6.3551, 50.92], [6.3551, 50.9201], [6.355, 50.92]]]}
     assert c.post("/api/analyse", json={"field": tiny, "crops": CROPS}).status_code == 422

@@ -4,7 +4,9 @@ import Landing from "./Landing";
 import FieldPanel from "./FieldPanel";
 import ResultsWindow from "./ResultsWindow";
 import HelpTour, { TourOffer } from "./HelpTour";
-import { analyse, areaHa, fetchCrops } from "./api";
+import MyFields, { NameDialog, Toast } from "./MyFields";
+import { loadFields, newId, storeFields, type SavedField } from "./storage";
+import { analyse, areaHa, checkField, fetchCrops } from "./api";
 import { useI18n } from "./i18n";
 import type { Analysis, CropOption, CropRow, Health, Priority, SoilAnswer } from "./types";
 
@@ -50,7 +52,35 @@ export default function App() {
     fetchCrops().then(setCrops).catch(() => setCropsError(true));
   }, []);
 
-  const onField = useCallback((p: GeoJSON.Polygon | null) => { setField(p); setData(null); }, []);
+  // Saved fields (on this device)
+  const [saved, setSaved] = useState<SavedField[]>(loadFields);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [showFields, setShowFields] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [restore, setRestore] = useState<{ polygon: GeoJSON.Polygon; key: number } | null>(null);
+  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 2800); return () => clearTimeout(id); }, [toast]);
+
+  const onField = useCallback((p: GeoJSON.Polygon | null, how?: "create" | "edit" | "clear") => {
+    setField(p);
+    setData(null);
+    if (how !== "edit") setCurrentId(null);     // a new outline is a new field, not the saved one
+  }, []);
+
+  // Check every new or edited outline at once: size, shape and whether it is on land (not sea, lake or river)
+  const [fieldProblem, setFieldProblem] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  useEffect(() => {
+    setFieldProblem(null);
+    if (!field) return;
+    const ctrl = new AbortController();
+    setChecking(true);
+    checkField(field, lang, ctrl.signal)
+      .then((problem) => setFieldProblem(problem))
+      .catch(() => {})
+      .finally(() => { if (!ctrl.signal.aborted) setChecking(false); });
+    return () => ctrl.abort();
+  }, [field, lang]);
 
   const run = async (over: { priority?: Priority; soilAnswer?: SoilAnswer } = {}) => {
     if (!field || irrigated === null || !(over.priority ?? priority)) return;
@@ -83,11 +113,51 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
+  const persist = (list: SavedField[]) => {
+    setSaved(list);
+    if (!storeFields(list)) setToast(t("save_failed"));
+  };
+  const record = (id: string, name: string): SavedField => ({
+    id, name, savedAt: new Date().toISOString(), field: field!, areaHa: areaHa(field!), rows, irrigated, priority,
+    soilAnswer, health, lang, analysis: data,
+  });
+  const save = () => {
+    if (!field) return;
+    const existing = saved.find((f) => f.id === currentId);
+    if (existing) {
+      persist(saved.map((f) => (f.id === existing.id ? record(existing.id, existing.name) : f)));
+      setToast(t("saved_toast"));
+    } else setNaming(true);
+  };
+  const saveAs = (name: string) => {
+    const id = newId();
+    persist([...saved, record(id, name)]);
+    setCurrentId(id);
+    setNaming(false);
+    setToast(t("saved_toast"));
+  };
+  const open = (f: SavedField) => {
+    setField(f.field);
+    setRows(f.rows);
+    setIrrigated(f.irrigated);
+    setPriority(f.priority);
+    setSoilAnswer(f.soilAnswer);
+    setHealth(f.health);
+    setData(f.analysis);
+    setError(null);
+    setCurrentId(f.id);
+    setRestore({ polygon: f.field, key: Date.now() });
+    setShowFields(false);
+    setWindowOpen(!!f.analysis);
+  };
+  const currentName = saved.find((f) => f.id === currentId)?.name ?? null;
+
   if (!started) return <Landing onStart={() => { window.location.hash = "map"; }} />;
 
   return (
     <div className="app">
-      <MapScreen field={field} onField={onField} onHome={() => { window.location.hash = ""; }}
+      <MapScreen field={field} onField={onField} fieldBad={!!fieldProblem} restore={restore}
+        onMyFields={() => setShowFields(true)} fieldsCount={saved.length} onHome={() => { window.location.hash = ""; }}
         onHelp={() => { setOffer(false); setTourOpen(true); }} />
 
       {field && (
@@ -104,6 +174,10 @@ export default function App() {
           setHealth={setHealth}
           busy={busy}
           error={cropsError ? t("crops_load_error") : null}
+          fieldProblem={fieldProblem}
+          checking={checking}
+          onSave={save}
+          savedName={currentName}
           onRedraw={() => onField(null)}
           onAnalyse={() => { setData(null); setWindowOpen(true); run(); }}
         />
@@ -119,6 +193,7 @@ export default function App() {
           priority={priority ?? "build_soil"}
           onPriority={(p) => { setPriority(p); run({ priority: p }); }}
           onClose={() => setWindowOpen(false)}
+          onSave={save}
         />
       )}
 
@@ -128,6 +203,24 @@ export default function App() {
           onSkip={() => { setOffer(false); markSeen(); }}
         />
       )}
+      {showFields && (
+        <MyFields
+          fields={saved}
+          currentId={currentId}
+          onOpen={open}
+          onRename={(id, name) => persist(saved.map((f) => (f.id === id ? { ...f, name } : f)))}
+          onDelete={(id) => { persist(saved.filter((f) => f.id !== id)); if (id === currentId) setCurrentId(null); }}
+          onImport={(list) => {
+            const ids = new Set(saved.map((f) => f.id));
+            persist([...saved, ...list.filter((f) => !ids.has(f.id))]);
+          }}
+          onClose={() => setShowFields(false)}
+        />
+      )}
+      {naming && field && (
+        <NameDialog initial={t("field_n", { n: saved.length + 1 })} onSave={saveAs} onCancel={() => setNaming(false)} />
+      )}
+      {toast && <Toast text={toast} />}
       {tourOpen && <HelpTour hasField={!!field} onClose={() => { setTourOpen(false); markSeen(); }} />}
     </div>
   );

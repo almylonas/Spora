@@ -620,4 +620,13 @@ S: dict[str, dict[str, str]] = {
                          "Krankheiten, mit Ihren Angaben zu diesem Feld.",
                    "el": "Εχθροί και ασθένειες: γεωπονικό κείμενο για τα χειμερινά σιτηρά, την αμειψισπορά, τους "
                          "εχθρούς και τις ασθένειες, μαζί με τις απαντήσεις σας για το χωράφι."},
+
+    "e_sea": {"en": "This outline is mostly at sea. Draw your field on land.",
+              "de": "Dieser Umriss liegt größtenteils im Meer. Zeichnen Sie Ihr Feld an Land ein.",
+              "el": "Αυτό το περίγραμμα είναι κυρίως στη θάλασσα. Σχεδιάστε το χωράφι σας στη στεριά."},
+    "e_water": {"en": "Much of this outline is water (a lake, river or reservoir). Draw your field on land.",
+                "de": "Ein großer Teil dieses Umrisses ist Wasser (See, Fluss oder Speicher). Zeichnen Sie Ihr Feld "
+                      "an Land ein.",
+                "el": "Μεγάλο μέρος αυτού του περιγράμματος είναι νερό (λίμνη, ποτάμι ή ταμιευτήρας). Σχεδιάστε το "
+                      "χωράφι σας στη στεριά."},
 }

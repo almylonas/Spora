@@ -6,18 +6,23 @@ import { searchPlaces, type Place } from "./api";
 import { parseCoordinates } from "./coords";
 import { LANGS, useI18n } from "./i18n";
 import {
-  IconDraw, IconEdit, IconFit, IconHelp, IconLayers, IconLocate, IconMinus, IconPin, IconPlus, IconSearch, IconTrash,
+  IconDraw, IconEdit, IconFields, IconFit, IconHelp, IconLayers, IconLocate, IconMinus, IconPin, IconPlus, IconSearch, IconTrash,
 } from "./icons";
 
 const FIELD_STYLE: L.PathOptions = { color: "#E3B23C", weight: 3, fillColor: "#E3B23C", fillOpacity: 0.18 };
+const BAD_STYLE: L.PathOptions = { color: "#e0566f", weight: 3, fillColor: "#e0566f", fillOpacity: 0.25, dashArray: "8 6" };
 
 type Mode = "idle" | "drawing" | "editing";
 
 interface Props {
   field: GeoJSON.Polygon | null;
-  onField: (p: GeoJSON.Polygon | null) => void;
+  onField: (p: GeoJSON.Polygon | null, how?: "create" | "edit" | "clear") => void;
   onHome: () => void;
   onHelp: () => void;
+  fieldBad?: boolean;
+  restore?: { polygon: GeoJSON.Polygon; key: number } | null;   // a saved field to show again
+  onMyFields: () => void;
+  fieldsCount: number;
 }
 
 export default function MapScreen(props: Props) {
@@ -44,7 +49,7 @@ export default function MapScreen(props: Props) {
   );
 }
 
-function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: Props & {
+function MapTools({ field, onField, onHome, onHelp, fieldBad, restore, onMyFields, fieldsCount, satellite, setSatellite }: Props & {
   satellite: boolean; setSatellite: (v: boolean) => void;
 }) {
   const { t } = useI18n();
@@ -62,8 +67,8 @@ function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: P
       const layer = e.layer as L.Polygon;
       layer.setStyle(FIELD_STYLE);
       layerRef.current = layer;
-      layer.on("pm:edit", () => onField(toGeo(layer)));
-      onField(toGeo(layer));
+      layer.on("pm:edit", () => onField(toGeo(layer), "edit"));
+      onField(toGeo(layer), "create");
       setMode("idle");
     };
     map.on("pm:create", onCreate as L.LeafletEventHandlerFn);
@@ -75,6 +80,22 @@ function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: P
     };
     return () => { map.off("pm:create", onCreate as L.LeafletEventHandlerFn); };
   }, [map, onField]);
+
+  // Show a saved field again (its outline, zoomed to it), without treating it as a new drawing
+  useEffect(() => {
+    if (!restore) return;
+    map.pm.disableDraw();
+    layerRef.current?.remove();
+    const layer = L.polygon(restore.polygon.coordinates[0].map(([lon, lat]) => [lat, lon] as [number, number]), FIELD_STYLE).addTo(map);
+    layer.on("pm:edit", () => onField(toGeo(layer), "edit"));
+    layerRef.current = layer;
+    map.fitBounds(layer.getBounds(), { padding: [80, 80] });
+    setMode("idle");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restore?.key]);
+
+  // An outline on water or the sea turns red and dashed until it is redrawn
+  useEffect(() => { layerRef.current?.setStyle(fieldBad ? BAD_STYLE : { ...FIELD_STYLE, dashArray: undefined }); }, [fieldBad, field]);
 
   // If the app clears the field (e.g. "Draw again"), remove the layer
   useEffect(() => {
@@ -114,7 +135,7 @@ function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: P
     map.pm.disableDraw();
     layerRef.current?.remove();
     layerRef.current = null;
-    onField(null);
+    onField(null, "clear");
     setMode("idle");
   };
 
@@ -157,6 +178,10 @@ function MapTools({ field, onField, onHome, onHelp, satellite, setSatellite }: P
       <nav className="toolrail" aria-label={t("map_tools")} onDoubleClick={(e) => e.stopPropagation()}>
         <span data-tour="help"><ToolButton label={t("help")} onClick={onHelp} accent><IconHelp /></ToolButton></span>
         <LangMenu />
+        <span data-tour="myfields" className="badge-wrap">
+          <ToolButton label={t("my_fields")} onClick={onMyFields}><IconFields /></ToolButton>
+          {fieldsCount > 0 && <span className="count-badge" aria-hidden="true">{fieldsCount}</span>}
+        </span>
         <span className="rail-gap" />
         <span data-tour="draw">
           <ToolButton label={mode === "drawing" ? t("stop_draw") : t("draw")} active={mode === "drawing"} onClick={startDraw} primary>

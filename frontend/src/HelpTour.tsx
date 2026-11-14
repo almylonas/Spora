@@ -13,6 +13,7 @@ const STEPS: { target: string | null; title: Key; text: Key }[] = [
   { target: "fix", title: "t5_t", text: "t5_d" },
   { target: "panel", title: "t6_t", text: "t6_d" },
   { target: "analyse", title: "t7_t", text: "t7_d" },
+  { target: "myfields", title: "t9_t", text: "t9_d" },
   { target: "lang", title: "t8_t", text: "t8_d" },
 ];
 

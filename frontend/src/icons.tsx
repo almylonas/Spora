@@ -66,3 +66,12 @@ export const IconBug = () => (
   <svg {...base} width={18} height={18}><ellipse cx="12" cy="13.5" rx="4.5" ry="6" /><path d="M12 7.5V19.5M9.5 7.5 8 5M14.5 7.5 16 5M7.5 12H4M16.5 12H20M7.8 16.5 5 18.5M16.2 16.5 19 18.5" /></svg>
 );
 export const IconCheck = () => <svg {...base} width={18} height={18}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>;
+export const IconSpeaker = () => (
+  <svg {...base} width={18} height={18}><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" /><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /></svg>
+);
+export const IconFields = () => (
+  <svg {...base}><path d="M3 7.5 9 5l6 2.5L21 5v11.5L15 19l-6-2.5L3 19z" /><path d="M9 5v11.5M15 7.5V19" /></svg>
+);
+export const IconSave = () => (
+  <svg {...base} width={18} height={18}><path d="M5 4h11l3 3v13H5z" /><path d="M8 4v5h7V4M8 20v-6h8v6" /></svg>
+);

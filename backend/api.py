@@ -22,6 +22,7 @@ import fieldshift_core as fs
 import fieldshift_rotations as fr
 import satellite as sat
 import i18n
+import landcheck
 import verbal
 from i18n import t
 
@@ -44,6 +45,11 @@ def demo_fields():
 # --------------------------------------------------------------------------
 # Request models
 # --------------------------------------------------------------------------
+class FieldIn(BaseModel):
+    field: dict
+    lang: Literal["en", "de", "el"] = "en"
+
+
 class CropIn(BaseModel):
     crop: str
     sow_month: int = Field(ge=1, le=12)
@@ -184,11 +190,10 @@ def crops():
     return sorted(out, key=lambda c: c["label"])
 
 
-@app.post("/api/analyse")
-def analyse(req: AnalyseIn):
-    i18n.set_lang(req.lang)
+def read_field(field: dict):
+    """Outline checks shared by /api/check_field and /api/analyse. Returns (polygon, area in ha)."""
     try:
-        poly = shape(req.field)
+        poly = shape(field)
     except Exception:
         raise HTTPException(422, t("e_read"))
     if poly.geom_type != "Polygon" or not poly.is_valid:
@@ -198,6 +203,24 @@ def analyse(req: AnalyseIn):
         raise HTTPException(422, t("e_small"))
     if area > 500:
         raise HTTPException(422, t("e_large"))
+    land = landcheck.check(poly)
+    if not land["ok"]:
+        raise HTTPException(422, t("e_sea" if land["problem"] == "sea" else "e_water"))
+    return poly, area
+
+
+@app.post("/api/check_field")
+def check_field(req: FieldIn):
+    """Quick check right after drawing: is the outline usable (size, shape, on land)?"""
+    i18n.set_lang(req.lang)
+    poly, area = read_field(req.field)
+    return {"ok": True, "area_ha": round(area, 1)}
+
+
+@app.post("/api/analyse")
+def analyse(req: AnalyseIn):
+    i18n.set_lang(req.lang)
+    poly, area = read_field(req.field)
     unknown = [c.crop for c in req.crops if c.crop.lower() not in TABLE.index]
     if unknown:
         raise HTTPException(422, t("e_crop", names=", ".join(unknown)))

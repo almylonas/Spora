@@ -29,6 +29,18 @@ export async function analyse(req: AnalyseRequest): Promise<Analysis> {
   );
 }
 
+/** Is the drawn outline usable (size, shape, on land)? Resolves to null when fine, or the problem in words. */
+export async function checkField(field: GeoJSON.Polygon, lang: string, signal?: AbortSignal): Promise<string | null> {
+  const res = await fetch("/api/check_field", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ field, lang }), signal,
+  });
+  if (res.ok) return null;
+  if (res.status === 422) {
+    try { const b = await res.json(); if (typeof b.detail === "string") return b.detail; } catch { /* ignore */ }
+  }
+  return null;   // the check itself failed: do not block the farmer
+}
+
 export interface Place {
   name: string;
   lat: number;

@@ -4,7 +4,7 @@ import { LangSwitch, useI18n, type Key } from "./i18n";
 import { PRIORITIES, type Analysis, type Priority, type RotationResult, type RotationWords, type SoilAnswer } from "./types";
 import {
   IconArrow, IconAsk, IconChevron, IconClose, IconCoin, IconDown, IconDrop, IconLeaf, IconRain, IconSame, IconSprout,
-  IconUp, IconWarn, IconBug, IconCheck,
+  IconUp, IconWarn, IconBug, IconCheck, IconSpeaker, IconSave,
 } from "./icons";
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   priority: Priority;
   onPriority: (p: Priority) => void;
   onClose: () => void;
+  onSave: () => void;
 }
 
 const ROT_NAME: Record<RotationResult["id"], Key> = {
@@ -81,6 +82,9 @@ export default function ResultsWindow(p: Props) {
         <footer className="window-foot">
           <p className="disclaimer desktop-only">{t("disclaimer")}</p>
           <LangSwitch className="window-lang phone-only-flex" />
+          <button type="button" className="save-button" disabled={!p.data} onClick={p.onSave}>
+            <IconSave /> {t("save_field")}
+          </button>
           {slide === 0 ? (
             <button type="button" className="primary" disabled={!p.data} onClick={() => setSlide(1)}>
               {t("compare")} <IconArrow dir="right" />
@@ -216,7 +220,10 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
   return (
     <div className="options-slide">
       <div className="decision">
-        <p className="decision-text">{data.words.summary}</p>
+        <div className="decision-main">
+          <p className="decision-text">{data.words.summary}</p>
+          <ReadAloud text={[data.words.summary, ...shared].join(" ")} />
+        </div>
         <div className="priority-switch" role="radiogroup" aria-label={t("matters_aria")}>
           {PRIORITIES.map((o) => (
             <button key={o.id} type="button" role="radio" aria-checked={priority === o.id} disabled={busy}
@@ -228,15 +235,11 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
       </div>
 
       {shared.length > 0 && (
-        <details className="shared-warnings">
-          <summary>
-            <IconWarn />
-            <span>{shared.length === 1 ? t("shared_h1") : t("shared_h", { n: shared.length })}</span>
-            <span className="chev" aria-hidden="true"><IconChevron /></span>
-          </summary>
+        <section className="shared-warnings">
+          <h3><IconWarn /> {shared.length === 1 ? t("shared_h1") : t("shared_h", { n: shared.length })}</h3>
           <p className="muted small">{t("shared_hint")}</p>
-          <ul>{shared.map((s) => <li key={s}>{s}</li>)}</ul>
-        </details>
+          <SharedList items={shared} />
+        </section>
       )}
 
       <div className={`cards${busy ? " is-busy" : ""}`}>
@@ -254,6 +257,22 @@ function OptionsSlide({ data, priority, onPriority, busy }: {
         ))}
       </div>
     </div>
+  );
+}
+
+function SharedList({ items }: { items: string[] }) {
+  const { t } = useI18n();
+  const [all, setAll] = useState(false);
+  const show = 2;
+  return (
+    <>
+      <ul>{(all ? items : items.slice(0, show)).map((s) => <li key={s}>{s}</li>)}</ul>
+      {items.length > show && (
+        <button type="button" className="link-button small-link" onClick={() => setAll(!all)} aria-expanded={all}>
+          {all ? t("show_less") : t("show_more", { n: items.length - show })}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -293,6 +312,7 @@ function OptionCard({ rot, current, maxWater, priority, words, best, showCereal 
   const reps = rot.health?.cereal_repeats ?? 0;
   const years = Math.max(1, Math.round((rot.cycle_months ?? 12) / 12));
   const mains = (rot.crops ?? []).filter((c) => !c.cover_crop).length;
+  const speech = [words.decision ?? "", ...(words.better ?? []), ...(words.warnings ?? [])].join(" ");
   return (
     <article className={`card${best ? " is-best" : ""}`}>
       <header className="card-head">
@@ -300,44 +320,99 @@ function OptionCard({ rot, current, maxWater, priority, words, best, showCereal 
         {badge && <span className={`badge${best ? " badge-best" : ""}`}>{badge}</span>}
       </header>
       <p className="card-decision">{words.decision}</p>
+      <ReadAloud text={`${name}. ${speech}`} />
 
-      <dl className="glance" aria-label={t("at_glance")}>
-        <GlanceRow icon={<IconSprout />} label={t("g_cover")} value={t("g_cover_val", { n: num(cover) })}
-          bar={<MonthsBar months={cover} />}
-          dir={isCurrent ? null : compare(cover, current.months_covered_per_year ?? 0, true, 0.5)} />
-        <GlanceRow icon={<IconRain />} label={t("g_rain")} value={`${num(rain)} %`}
-          bar={<Bar share={rain / 100} tone="loam" />}
-          dir={isCurrent ? null : compare(rain, current.rain_on_open_soil_pct ?? 0, false, 3)} />
-        <GlanceRow icon={<IconDrop />} label={t("g_water")} value={t("g_water_val", { n: num(water) })}
-          bar={<Bar share={water / maxWater} tone="sky" />}
-          dir={isCurrent ? null : compare(water, current.extra_water_mm_per_year ?? 0, false, 10)} />
-        {showCereal && (
-          <GlanceRow icon={<IconBug />} label={t("g_cereal")}
-            value={reps === 0 ? t("g_cereal_none") : t("g_cereal_val", { n: `${reps}×`, y: years })}
-            bar={<Bar share={Math.min(1, reps / Math.max(1, mains))} tone="beet" />}
-            dir={isCurrent ? null : compare(reps, current.health?.cereal_repeats ?? 0, false, 0.5)} />
-        )}
-        {priority === "income_forage" && (
-          <GlanceRow icon={<IconCoin />} label={t("g_earn")} value={t("g_earn_val", { n: num(earn, 1) })}
-            bar={<Bar share={earn / 12} tone="straw" />}
-            dir={isCurrent ? null : compare(earn, current.earning_months_per_year ?? 0, true, 0.5)} />
-        )}
-      </dl>
-
-      <MonthStrip items={rot.timeline} compact />
-
-      <div className="more">
-        {words.better && words.better.length > 0 && (
-          <More title={t("better_h")} icon={<IconLeaf />} items={words.better} tone="good" />
-        )}
-        {words.warnings && words.warnings.length > 0 && (
-          <More title={t("warnings_h")} icon={<IconWarn />} items={words.warnings} tone="warn" />
-        )}
-        {words.ask_advisor && words.ask_advisor.length > 0 && (
+      {/* The advice in words comes first; the numbers and months follow for those who want them */}
+      {words.better && words.better.length > 0 && (
+        <TextList title={t("why_h")} icon={<IconLeaf />} items={words.better} tone="good" show={3} />
+      )}
+      {words.warnings && words.warnings.length > 0 && (
+        <TextList title={t("warnings_h")} icon={<IconWarn />} items={words.warnings} tone="warn" show={isCurrent ? 3 : 2} />
+      )}
+      {words.ask_advisor && words.ask_advisor.length > 0 && (
+        <div className="more">
           <More title={t("advisor_h")} icon={<IconAsk />} items={words.ask_advisor} tone="ask" />
-        )}
-      </div>
+        </div>
+      )}
+
+      <section className="card-numbers" aria-label={t("in_numbers")}>
+        <h4 className="numbers-h">{t("in_numbers")}</h4>
+        <dl className="glance">
+          <GlanceRow icon={<IconSprout />} label={t("g_cover")} value={t("g_cover_val", { n: num(cover) })}
+            bar={<MonthsBar months={cover} />}
+            dir={isCurrent ? null : compare(cover, current.months_covered_per_year ?? 0, true, 0.5)} />
+          <GlanceRow icon={<IconRain />} label={t("g_rain")} value={`${num(rain)} %`}
+            bar={<Bar share={rain / 100} tone="loam" />}
+            dir={isCurrent ? null : compare(rain, current.rain_on_open_soil_pct ?? 0, false, 3)} />
+          <GlanceRow icon={<IconDrop />} label={t("g_water")} value={t("g_water_val", { n: num(water) })}
+            bar={<Bar share={water / maxWater} tone="sky" />}
+            dir={isCurrent ? null : compare(water, current.extra_water_mm_per_year ?? 0, false, 10)} />
+          {showCereal && (
+            <GlanceRow icon={<IconBug />} label={t("g_cereal")}
+              value={reps === 0 ? t("g_cereal_none") : t("g_cereal_val", { n: `${reps}×`, y: years })}
+              bar={<Bar share={Math.min(1, reps / Math.max(1, mains))} tone="beet" />}
+              dir={isCurrent ? null : compare(reps, current.health?.cereal_repeats ?? 0, false, 0.5)} />
+          )}
+          {priority === "income_forage" && (
+            <GlanceRow icon={<IconCoin />} label={t("g_earn")} value={t("g_earn_val", { n: num(earn, 1) })}
+              bar={<Bar share={earn / 12} tone="straw" />}
+              dir={isCurrent ? null : compare(earn, current.earning_months_per_year ?? 0, true, 0.5)} />
+          )}
+        </dl>
+        <details className="months-more">
+          <summary><span>{t("month_by_month")}</span><span className="chev" aria-hidden="true"><IconChevron /></span></summary>
+          <MonthStrip items={rot.timeline} compact />
+        </details>
+      </section>
     </article>
+  );
+}
+
+/** A list shown as text, with the first few lines always visible. */
+function TextList({ title, icon, items, tone, show }: {
+  title: string; icon: React.ReactNode; items: string[]; tone: string; show: number;
+}) {
+  const { t } = useI18n();
+  const [all, setAll] = useState(false);
+  const visible = all ? items : items.slice(0, show);
+  return (
+    <section className={`text-list tone-${tone}`}>
+      <h4><span className="more-icon" aria-hidden="true">{icon}</span>{title}</h4>
+      <ul>{visible.map((s) => <li key={s}>{s}</li>)}</ul>
+      {items.length > show && (
+        <button type="button" className="link-button small-link" onClick={() => setAll(!all)} aria-expanded={all}>
+          {all ? t("show_less") : t("show_more", { n: items.length - show })}
+        </button>
+      )}
+    </section>
+  );
+}
+
+/** Reads the advice out loud with the browser's own voice, in the chosen language. */
+const VOICE_LANG = { en: "en-GB", de: "de-DE", el: "el-GR" } as const;
+function ReadAloud({ text }: { text: string }) {
+  const { t, lang } = useI18n();
+  const [speaking, setSpeaking] = useState(false);
+  useEffect(() => () => { if (speaking) window.speechSynthesis?.cancel(); }, [speaking]);
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+  const toggle = () => {
+    const synth = window.speechSynthesis;
+    if (speaking) { synth.cancel(); setSpeaking(false); return; }
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = VOICE_LANG[lang];
+    const voice = synth.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang));
+    if (voice) u.voice = voice;
+    u.rate = 0.95;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    synth.speak(u);
+    setSpeaking(true);
+  };
+  return (
+    <button type="button" className={`read-aloud${speaking ? " is-on" : ""}`} onClick={toggle} aria-pressed={speaking}>
+      <IconSpeaker /> {speaking ? t("stop_reading") : t("read_aloud")}
+    </button>
   );
 }
 
