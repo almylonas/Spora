@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/FieldPanel.tsx","./src/MapScreen.tsx","./src/MonthStrip.tsx","./src/ResultsWindow.tsx","./src/api.ts","./src/icons.tsx","./src/main.tsx","./src/types.ts"],"version":"5.8.3"}
+{"root":["./src/app.tsx","./src/fieldpanel.tsx","./src/landing.tsx","./src/mapscreen.tsx","./src/monthstrip.tsx","./src/resultswindow.tsx","./src/api.ts","./src/icons.tsx","./src/main.tsx","./src/types.ts"],"version":"5.8.3"}
