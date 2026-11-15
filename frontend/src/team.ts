@@ -3,10 +3,11 @@
 export const TEAM_NAME = "Team Spora";
 
 export const TEAM: { name: string; affiliation: string }[] = [
-  { name: "Team member 1", affiliation: "University or company" },
-  { name: "Team member 2", affiliation: "University or company" },
-  { name: "Team member 3", affiliation: "University or company" },
-  { name: "Team member 4", affiliation: "University or company" },
+  { name: "Alexandros Mylonas", affiliation: "University of Bonn" },
+  { name: "Ankush Yadav", affiliation: "Amazon" },
+  { name: "Konstantina Dimitrentsi Chatzivasileiou", affiliation: "Aristotle University of Thessaloniki" },
+  { name: "Rongbo Jian", affiliation: "RWTH Aachen" },
+  { name: "Konstantina Stavraki", affiliation: "Aristotle University of Thessaloniki" },
 ];
 
 /** Optional line under the list, for example thanks to your agriculturalist. Use "" to hide it. */
