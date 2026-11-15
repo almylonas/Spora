@@ -144,6 +144,12 @@ export function HowPage() {
         <div className="sub-prose"><p>{t("bb_d")}</p></div>
       </section>
 
+      <section className="sub-block method-block">
+        <h2>{t("method_t")}</h2>
+        <div className="sub-prose"><p>{t("method_d")}</p></div>
+        <a className="hero-cta method-btn" href="/spora-method.pdf" target="_blank" rel="noreferrer">{t("method_btn")}</a>
+      </section>
+
       <section className="sub-block">
         <h2>{t("ex_t")}</h2>
         <div className="sub-prose"><p>{t("ex_d")}</p></div>

@@ -823,3 +823,5 @@ details[open] > summary .chev { transform: rotate(90deg); }
   .scene-note { padding: 22px 16px 8px; text-align: left; font-size: 0.95rem; }
   .scene-data { padding-bottom: 24px; }
 }
+
+.method-btn { display: inline-flex; align-items: center; text-decoration: none; margin-top: 4px; }
