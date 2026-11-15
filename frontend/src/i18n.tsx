@@ -234,6 +234,7 @@ const S = {
 
   // ---- start-page menu and sub-pages
   nav_label: { en: "Main menu", de: "Hauptmenü", el: "Κύριο μενού" },
+  github_label: { en: "Spora on GitHub (opens a new tab)", de: "Spora auf GitHub (neuer Tab)", el: "Το Spora στο GitHub (νέα καρτέλα)" },
   nav_home: { en: "Home", de: "Start", el: "Αρχική" },
   nav_how: { en: "How it works", de: "So funktioniert es", el: "Πώς λειτουργεί" },
   nav_about: { en: "About", de: "Über Spora", el: "Σχετικά" },

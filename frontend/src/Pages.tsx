@@ -20,7 +20,15 @@ export function LandNav({ page }: { page: Page }) {
         {link("how", "how", "nav_how")}
         {link("about", "about", "nav_about")}
       </nav>
-      <LangSwitch className="land-lang" />
+      <div className="land-nav-end">
+        <a className="land-gh" href="https://github.com/almylonas/Spora" target="_blank" rel="noreferrer"
+          aria-label={t("github_label")}>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor"
+            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></svg>
+          GitHub
+        </a>
+        <LangSwitch className="land-lang" />
+      </div>
     </header>
   );
 }

@@ -825,3 +825,12 @@ details[open] > summary .chev { transform: rotate(90deg); }
 }
 
 .method-btn { display: inline-flex; align-items: center; text-decoration: none; margin-top: 4px; }
+
+.land-nav-end { display: flex; align-items: center; gap: 10px; }
+.land-gh {
+  display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-radius: 999px;
+  background: rgba(10, 19, 14, 0.45); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff; font-weight: 700; text-decoration: none;
+}
+.land-gh:hover { background: rgba(255, 255, 255, 0.16); }
+.land-gh:focus-visible { outline: 3px solid var(--straw); outline-offset: 2px; }
