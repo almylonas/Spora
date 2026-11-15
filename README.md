@@ -148,7 +148,7 @@ and the field's mean slope is 3 %.
 | [NASA HLS](https://hls.gsfc.nasa.gov/) (Harmonized Landsat Sentinel-2, 30 m) | Monthly greenness (NDVI) of the field, to see from space when the soil is really bare |
 | [NASADEM](https://lpdaac.usgs.gov/products/nasadem_hgtv001/) (30 m elevation) | Slope of the field, to judge how easily bare soil washes away |
 | FAO-56 (Allen et al., 1998) | Reference evapotranspiration method and crop water coefficients |
-| Agronomy text on winter cereals, crop rotation, pests and diseases (from the team's agronomist) | Field-health rules: pests, diseases, nutrients and soil |
+| Agronomy text on winter cereals, crop rotation, pests and diseases | Field-health rules: pests, diseases, nutrients and soil |
 | Landwirtschaftskammer NRW and FAO crop calendars | Sowing and harvest months, cover crops and crop limits in the crop table (`backend/crops.csv`) |
 | NRW field blocks (ogc-api.nrw.de) | The outline of the demo field |
 | OpenStreetMap / Nominatim, Esri World Imagery | Map tiles and place search |
