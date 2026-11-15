@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { LangSwitch, useI18n, type Key } from "./i18n";
+import { useI18n, type Key } from "./i18n";
+import { LandFooter, LandNav, go } from "./Pages";
 
 /* The two scenes are the team's illustrations with their words removed; the words are live text placed where the
  * originals were (positions in % of the 1920 × 1088 artwork), so they can be translated and read aloud.
@@ -36,7 +37,6 @@ function useReveal<T extends HTMLElement>() {
 
 export default function Landing({ onStart }: { onStart: () => void }) {
   const { t } = useI18n();
-  const howRef = useRef<HTMLElement>(null);
   const [stepsRef, stepsIn] = useReveal<HTMLDivElement>();
   const [dataRef, dataIn] = useReveal<HTMLDivElement>();
   useEffect(() => { document.title = "Spora"; }, []);
@@ -49,7 +49,7 @@ export default function Landing({ onStart }: { onStart: () => void }) {
         </div>
         <div className="hero-wash" aria-hidden="true" />
 
-        <LangSwitch className="land-lang" />
+        <LandNav page="home" />
 
         <div className="hero-content">
           <h1 className="hero-logo">
@@ -59,7 +59,7 @@ export default function Landing({ onStart }: { onStart: () => void }) {
           <p className="hero-sub">{t("hero_sub")}</p>
           <div className="hero-actions">
             <button type="button" className="hero-cta" onClick={onStart}>{t("draw")}</button>
-            <button type="button" className="hero-link" onClick={() => howRef.current?.scrollIntoView({ behavior: "smooth" })}>
+            <button type="button" className="hero-link" onClick={() => go("how")}>
               {t("how_it_works")}
             </button>
           </div>
@@ -69,7 +69,7 @@ export default function Landing({ onStart }: { onStart: () => void }) {
       </section>
 
       {/* Scene 1: three steps along the glowing path */}
-      <section className="scene-wrap" ref={howRef} aria-labelledby="how-title">
+      <section className="scene-wrap" aria-labelledby="how-title">
         <div className={`scene scene-steps${stepsIn ? " is-in" : ""}`} ref={stepsRef}>
           <img className="scene-art" src="/landing/steps-plate.jpg" alt="" width={1920} height={1088} loading="lazy" />
           <h2 id="how-title" className="scene-title" style={{ "--x": 4.2, "--y": 8.4, "--w": 64 } as React.CSSProperties}>
@@ -125,10 +125,7 @@ export default function Landing({ onStart }: { onStart: () => void }) {
         <button type="button" className="hero-cta" onClick={onStart}>{t("draw")}</button>
       </section>
 
-      <footer className="land-foot">
-        <img src="/landing/spora-logo.png" alt="" aria-hidden="true" />
-        <p>{t("disclaimer")}</p>
-      </footer>
+      <LandFooter />
     </div>
   );
 }

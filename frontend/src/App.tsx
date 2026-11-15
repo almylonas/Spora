@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import MapScreen from "./MapScreen";
 import Landing from "./Landing";
+import { AboutPage, HowPage } from "./Pages";
 import FieldPanel from "./FieldPanel";
 import ResultsWindow from "./ResultsWindow";
 import HelpTour, { TourOffer } from "./HelpTour";
@@ -14,13 +15,18 @@ const TOUR_SEEN = "spora-tour-seen";
 
 export default function App() {
   const { lang, t } = useI18n();
-  // The start page shows first; "#map" in the address opens the map directly (handy for the demo).
-  const [started, setStarted] = useState(() => window.location.hash === "#map");
+  // The start page shows first. The address hash picks the page: "" start, "#how", "#about", "#map" (the app).
+  const pageFromHash = (): "home" | "how" | "about" | "map" => {
+    const h = window.location.hash.replace("#", "");
+    return h === "map" || h === "how" || h === "about" ? h : "home";
+  };
+  const [page, setPage] = useState(pageFromHash);
   useEffect(() => {
-    const onHash = () => setStarted(window.location.hash === "#map");
+    const onHash = () => { setPage(pageFromHash()); window.scrollTo(0, 0); };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+  const started = page === "map";
   const [field, setField] = useState<GeoJSON.Polygon | null>(null);
   const [crops, setCrops] = useState<CropOption[]>([]);
   const [rows, setRows] = useState<CropRow[]>([{ id: 1, crop: "", sow_month: 4, harvest_month: 10 }]);
@@ -152,6 +158,8 @@ export default function App() {
   };
   const currentName = saved.find((f) => f.id === currentId)?.name ?? null;
 
+  if (page === "how") return <HowPage key="how" />;
+  if (page === "about") return <AboutPage key="about" />;
   if (!started) return <Landing onStart={() => { window.location.hash = "map"; }} />;
 
   return (

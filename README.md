@@ -110,6 +110,10 @@ on the map lists them with a small drawing of each outline: open one to see its 
 it. Fields are saved on the farmer's device, with no account; **Export** writes them to a file that can be kept as
 a copy or imported on another device.
 
+### Start-page menu
+
+The start page has two more pages, reached from the menu at the top: **How it works** (farmer input → raw data → Spora rotation engine → recommendations) and **About** (why Spora exists, impact, limits and the team). The team list is in `frontend/src/team.ts`.
+
 ### 9. Three languages
 English, Deutsch and Ελληνικά, switchable on the start page, on the map and inside the results. Everything is
 translated, including crop names, months and the result sentences. The choice is remembered on the device.
